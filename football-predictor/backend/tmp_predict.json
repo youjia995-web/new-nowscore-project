@@ -1,0 +1,39 @@
+{
+  "home_team": {
+    "name": "Arsenal",
+    "ranking": 1,
+    "games_played": 30,
+    "xg": 50.0,
+    "xga": 25.0,
+    "xpts": 65.0,
+    "recent_goals_scored": 10,
+    "recent_goals_conceded": 5
+  },
+  "away_team": {
+    "name": "Chelsea",
+    "ranking": 7,
+    "games_played": 30,
+    "xg": 40.0,
+    "xga": 35.0,
+    "xpts": 50.0,
+    "recent_goals_scored": 9,
+    "recent_goals_conceded": 8
+  },
+  "odds_data": [
+    {
+      "company": "365",
+      "initial_home_win": 2.1,
+      "initial_draw": 3.2,
+      "initial_away_win": 3.5,
+      "final_home_win": 1.95,
+      "final_draw": 3.3,
+      "final_away_win": 3.8,
+      "initial_handicap": "0.5",
+      "final_handicap": "0.75",
+      "initial_handicap_home_odds": 1.90,
+      "initial_handicap_away_odds": 1.95,
+      "final_handicap_home_odds": 1.85,
+      "final_handicap_away_odds": 2.00
+    }
+  ]
+}

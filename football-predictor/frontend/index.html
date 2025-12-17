@@ -1,0 +1,2523 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <!-- 保持原有的head部分不变 -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>通用型足彩分析</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+    
+    <link href="./styles.css" rel="stylesheet">
+    <style>
+        /* 仅保留最小覆盖，其他视觉交给 styles.css */
+        body { padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .market-trend {
+            font-style: italic;
+            color: #6c757d;
+        }
+        .ai-analysis {
+            white-space: pre-wrap; /* 保留换行并自动换行 */
+            line-height: 1.7;
+            word-break: break-word; /* 长连续文本也可断行 */
+            overflow-wrap: anywhere; /* 进一步确保中文/长词不被截断隐藏 */
+            overflow-y: auto; /* 文本过长时可滚动查看 */
+            max-height: 65vh; /* 防止卡片过长，同时确保内容完整可见 */
+        }
+        .btn-add-odds {
+            margin-top: 10px;
+        }
+        .odds-container {
+            margin-bottom: 20px;
+        }
+        .handicap-info {
+            font-size: 0.875rem;
+            color: #6c757d;
+            margin-top: 5px;
+            padding: 8px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            border-left: 3px solid #6c757d;
+        }
+        .handicap-rule {
+            margin-top: 5px;
+            font-size: 0.8rem;
+            color: #495057;
+        }
+        /* 新增：统一卡片与分区标题样式 */
+        .card-header { background-color: #f4f6f8; }
+        .section-subtitle {
+            font-weight: 600;
+            color: #495057;
+            background: #f8f9fa;
+            border-left: 3px solid #0d6efd;
+            padding: 6px 10px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+        .chart-title {
+            font-weight: 600;
+            color: #343a40;
+        }
+        .odds-row .row { margin-bottom: 8px; }
+        /* 新增：比分热力图样式 */
+        .heatmap-grid { display: grid; gap: 2px; align-items: center; }
+        .heat-cell { width: 26px; height: 26px; border-radius: 3px; background-color: rgba(220,53,69,0.1); }
+        .heat-legend { font-size: 0.8rem; color: #6c757d; }
+        /* 新增：坐标轴样式 */
+        .heatmap-header, .heatmap-row { display: grid; gap: 2px; align-items: center; }
+        .axis-cell { width: 26px; height: 26px; display:flex; align-items:center; justify-content:center; font-size: 11px; color: #6c757d; }
+        .axis-title { font-size: 0.85rem; color: #495057; margin-top: 4px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <ul class="nav nav-tabs" id="main-tabs">
+            <li class="nav-item"><a class="nav-link active" href="#" onclick="switchTab('predict')">比赛预测</a></li>
+            <li class="nav-item"><a class="nav-link" href="#" onclick="switchTab('admin')">历史样本录入</a></li>
+            <li class="nav-item"><a class="nav-link" href="#" onclick="switchTab('import')">数据导入</a></li>
+            <li class="nav-item"><a class="nav-link" href="#" onclick="switchTab('settings')">系统设置</a></li>
+        </ul>
+    </div>
+    <div class="container mt-2 text-end">
+        <a href="advanced.html" class="btn btn-outline-secondary btn-sm">前往高级页面</a>
+    </div>
+
+    <div id="section-predict" class="container mt-5">
+        <div class="text-center mb-4">
+            <h1>通用型足彩分析</h1>
+            <p class="lead">输入比赛数据，获取基于定量模型和市场共识的深度分析</p>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header">
+                <h3>球队数据</h3>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="section-subtitle">主队</div>
+                        <div class="row g-2">
+                            <div class="col-12 col-md-6">
+                                <label for="home-team-name" class="form-label">球队名称</label>
+                                <input type="text" class="form-control" id="home-team-name" required>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <label for="home-formation" class="form-label">阵型（如 4-2-3-1）</label>
+                                <input type="text" class="form-control" id="home-formation" placeholder="可选">
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <label for="home-team-ranking" class="form-label">当前排名</label>
+                                <input type="number" class="form-control" id="home-team-ranking" required>
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label for="home-games-played" class="form-label">已赛场次</label>
+                                <input type="number" class="form-control" id="home-games-played" value="30">
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label for="home-xg" class="form-label">xG (预期进球)</label>
+                                <input type="number" step="0.01" class="form-control" id="home-xg" value="2.1">
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label for="home-xga" class="form-label">xGA (预期失球)</label>
+                                <input type="number" step="0.01" class="form-control" id="home-xga" value="0.9">
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label for="home-xpts" class="form-label">xPTS (预期积分)</label>
+                                <input type="number" step="0.01" class="form-control" id="home-xpts" value="2.3">
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label for="home-season-goals-for" class="form-label">赛季进球数</label>
+                                <input type="number" class="form-control" id="home-season-goals-for" value="10">
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label for="home-season-goals-against" class="form-label">赛季失球数</label>
+                                <input type="number" class="form-control" id="home-season-goals-against" value="3">
+                            </div>
+                            <!-- 新增高级指标（可选） -->
+                            <div class="col-12 col-md-4">
+                                <label for="home-npxg" class="form-label">npxG (非点球xG)</label>
+                                <input type="number" step="0.01" class="form-control" id="home-npxg" placeholder="可选">
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label for="home-npxga" class="form-label">npxGA (非点球xGA)</label>
+                                <input type="number" step="0.01" class="form-control" id="home-npxga" placeholder="可选">
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label for="home-ppda" class="form-label">PPDA (越低压迫越强)</label>
+                                <input type="number" step="0.01" class="form-control" id="home-ppda" placeholder="可选">
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label for="home-oppda" class="form-label">OPPDA (对手压迫强度)</label>
+                                <input type="number" step="0.01" class="form-control" id="home-oppda" placeholder="可选">
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label for="home-dc" class="form-label">DC (危险机会)</label>
+                                <input type="number" step="0.01" class="form-control" id="home-dc" placeholder="可选">
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label for="home-odc" class="form-label">ODC (被创造危险机会)</label>
+                                <input type="number" step="0.01" class="form-control" id="home-odc" placeholder="可选">
+                        </div>
+                        <!-- 新增：胜/平/负与积分、NPxGD -->
+                        <div class="col-12 col-md-4">
+                            <label for="home-wins" class="form-label">胜 (W)</label>
+                            <input type="number" class="form-control" id="home-wins" placeholder="可选">
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <label for="home-draws" class="form-label">平 (D)</label>
+                            <input type="number" class="form-control" id="home-draws" placeholder="可选">
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <label for="home-losses" class="form-label">负 (L)</label>
+                            <input type="number" class="form-control" id="home-losses" placeholder="可选">
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <label for="home-points" class="form-label">积分 (PTS)</label>
+                            <input type="number" step="0.01" class="form-control" id="home-points" placeholder="可选">
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <label for="home-xpxgd" class="form-label">NPxGD</label>
+                            <input type="number" step="0.01" class="form-control" id="home-xpxgd" placeholder="可选">
+                        </div>
+                        <div class="col-12">
+                            <div class="d-flex align-items-center gap-2 mt-2">
+                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="openRosterModal('home')">编辑主队阵容</button>
+                                <span id="home-roster-summary" class="text-muted small">未设置阵容</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="section-subtitle">客队</div>
+                    <div class="row g-2">
+                            <div class="col-12 col-md-6">
+                                <label for="away-team-name" class="form-label">球队名称</label>
+                                <input type="text" class="form-control" id="away-team-name" required>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <label for="away-formation" class="form-label">阵型（如 4-3-3）</label>
+                                <input type="text" class="form-control" id="away-formation" placeholder="可选">
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <label for="away-team-ranking" class="form-label">当前排名</label>
+                                <input type="number" class="form-control" id="away-team-ranking" required>
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label for="away-games-played" class="form-label">已赛场次</label>
+                                <input type="number" class="form-control" id="away-games-played" value="30">
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label for="away-xg" class="form-label">xG (预期进球)</label>
+                                <input type="number" step="0.01" class="form-control" id="away-xg" value="1.8">
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label for="away-xga" class="form-label">xGA (预期失球)</label>
+                                <input type="number" step="0.01" class="form-control" id="away-xga" value="1.1">
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label for="away-xpts" class="form-label">xPTS (预期积分)</label>
+                                <input type="number" step="0.01" class="form-control" id="away-xpts" value="1.9">
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label for="away-season-goals-for" class="form-label">赛季进球数</label>
+                                <input type="number" class="form-control" id="away-season-goals-for" value="8">
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label for="away-season-goals-against" class="form-label">赛季失球数</label>
+                                <input type="number" class="form-control" id="away-season-goals-against" value="5">
+                            </div>
+                            <!-- 新增高级指标（可选） -->
+                            <div class="col-12 col-md-4">
+                                <label for="away-npxg" class="form-label">npxG (非点球xG)</label>
+                                <input type="number" step="0.01" class="form-control" id="away-npxg" placeholder="可选">
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label for="away-npxga" class="form-label">npxGA (非点球xGA)</label>
+                                <input type="number" step="0.01" class="form-control" id="away-npxga" placeholder="可选">
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label for="away-ppda" class="form-label">PPDA (越低压迫越强)</label>
+                                <input type="number" step="0.01" class="form-control" id="away-ppda" placeholder="可选">
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label for="away-oppda" class="form-label">OPPDA (对手压迫强度)</label>
+                                <input type="number" step="0.01" class="form-control" id="away-oppda" placeholder="可选">
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label for="away-dc" class="form-label">DC (危险机会)</label>
+                                <input type="number" step="0.01" class="form-control" id="away-dc" placeholder="可选">
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label for="away-odc" class="form-label">ODC (被创造危险机会)</label>
+                                <input type="number" step="0.01" class="form-control" id="away-odc" placeholder="可选">
+                            </div>
+                            <!-- 新增：胜/平/负与积分、NPxGD -->
+                            <div class="col-12 col-md-4">
+                                <label for="away-wins" class="form-label">胜 (W)</label>
+                                <input type="number" class="form-control" id="away-wins" placeholder="可选">
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label for="away-draws" class="form-label">平 (D)</label>
+                                <input type="number" class="form-control" id="away-draws" placeholder="可选">
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label for="away-losses" class="form-label">负 (L)</label>
+                                <input type="number" class="form-control" id="away-losses" placeholder="可选">
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label for="away-points" class="form-label">积分 (PTS)</label>
+                                <input type="number" step="0.01" class="form-control" id="away-points" placeholder="可选">
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label for="away-xpxgd" class="form-label">NPxGD</label>
+                                <input type="number" step="0.01" class="form-control" id="away-xpxgd" placeholder="可选">
+                            </div>
+                            <div class="col-12">
+                                <div class="d-flex align-items-center gap-2 mt-2">
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="openRosterModal('away')">编辑客队阵容</button>
+                                    <span id="away-roster-summary" class="text-muted small">未设置阵容</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        
+
+        
+        
+        <div class="card mb-4">
+            <div class="card-header"><h3>联赛参数建议</h3></div>
+            <div class="card-body">
+                <div class="row g-3 align-items-center">
+                    <div class="col-12 col-md-6">
+                        <label for="league-preset" class="form-label">联赛选择</label>
+                        <select id="league-preset" class="form-select">
+                            <option value="">不使用联赛建议</option>
+                            <option value="英超/德甲">英超/德甲</option>
+                            <option value="意甲/法甲">意甲/法甲</option>
+                            <option value="西甲">西甲</option>
+                        </select>
+                        <div class="form-text">自动应用 BP_SHARED_STRENGTH 与 DRAW_BOOST_STRENGTH 建议值（仅当前请求）。</div>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <div class="border rounded p-2 small text-muted" id="league-preset-hint">
+                            建议范围：英超/德甲 0.12–0.16 / 0.06–0.10；意甲/法甲 0.16–0.22 / 0.08–0.12；西甲 0.14–0.18 / 0.08–0.10。
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card mb-4">
+            <div class="card-header">
+                <h3>赔率数据</h3>
+            </div>
+            <div class="card-body">
+                <div id="odds-container">
+                    <!-- 赔率输入行将在这里动态添加 -->
+                </div>
+                <button type="button" class="btn btn-outline-primary mt-2" onclick="addOddsRow()">
+                    <svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path fill-rule="evenodd" d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2Z"/></svg> 添加赔率公司
+                </button>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header"><h3>操作面板</h3></div>
+            <div class="card-body d-flex justify-content-center gap-3">
+                <button type="button" class="btn btn-primary btn-lg" onclick="submitData()">提交预测</button>
+                <button type="button" class="btn btn-outline-primary btn-lg" onclick="loadMockData()">加载模拟数据</button>
+            </div>
+        </div>
+
+        <div id="progress-div" class="card mt-3" style="display: none;">
+            <div class="card-header"><h3>预测进度</h3></div>
+            <div class="card-body">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="progress" style="flex:1">
+                        <div id="progress-bar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                            <span id="progress-percent" class="progress-percent">0%</span>
+                        </div>
+                    </div>
+                    <span id="progress-stage-icon" class="progress-stage-icon" aria-hidden="true"></span>
+                </div>
+                <p id="progress-text" class="mt-2 text-center"></p>
+                <div class="d-flex justify-content-end mt-2">
+                    <button id="progress-cancel-btn" type="button" class="btn btn-outline-danger btn-sm" onclick="cancelProgress()">取消/重置</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="analysis-report" class="mt-5" style="display: none;">
+            <div class="card">
+                <div class="card-header">
+                    <h3>AI分析报告</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card mb-3">
+                                <div class="card-header"><h5>定量模型分析 (基于xG, xPTS)</h5></div>
+                                <div class="card-body">
+                                    <p>主胜概率: <span class="model-home-win"></span></p>
+                                    <p>平局概率: <span class="model-draw"></span></p>
+                                    <p>客胜概率: <span class="model-away-win"></span></p>
+                                    <h6>最可能比分:</h6>
+                                    <ul class="list-unstyled likely-scores"></ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card mb-3">
+                                <div class="card-header"><h5>市场共识分析 (基于赔率)</h5></div>
+                                <div class="card-body">
+                                    <p>主胜概率: <span class="market-home-win"></span></p>
+                                    <p>平局概率: <span class="market-draw"></span></p>
+                                    <p>客胜概率: <span class="market-away-win"></span></p>
+                                    <p><strong>市场趋势:</strong> <span class="market-trend-text"></span></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card mb-3">
+                                <div class="card-header"><h5>各公司隐含概率（终盘）</h5></div>
+                                <div class="card-body">
+                                    <div class="company-implied-list"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                     <div class="row">
+                         <div class="col-12">
+                             <div class="card mb-3">
+                                 <div class="card-header"><h5>融合概率（模型 × 市场）</h5></div>
+                                 <div class="card-body">
+                                     <p>主胜概率: <span class="fused-home-win"></span></p>
+                                     <p>平局概率: <span class="fused-draw"></span></p>
+                                     <p>客胜概率: <span class="fused-away"></span></p>
+                                     <p><strong>权重:</strong> <span class="fusion-weights-text"></span></p>
+                                     <p class="text-muted fusion-notes-text"></p>
+                                 </div>
+                             </div>
+                         </div>
+                     </div>
+                     <div class="row">
+                         <div class="col-12">
+                             <div class="card mb-3">
+                                 <div class="card-header"><h5>历史赛季融合（按场次动态权重）</h5></div>
+                                 <div class="card-body">
+                                     <p class="text-muted">基于上赛季 xG/xGA/xPTS 与当前赛季数据的线性融合。</p>
+                                     <p><strong>摘要:</strong> <span class="history-summary-text"></span></p>
+                                 </div>
+                             </div>
+                         </div>
+                     </div>
+        <div class="row">
+            <div class="col-12">
+                <div class="card mb-3">
+                    <div class="card-header"><h5>让盘合理性与异象</h5></div>
+                    <div class="card-body">
+                                    <p>模型期望让球: <span class="expected-handicap-text"></span></p>
+                                    <p>市场终盘让球均值: <span class="market-final-handicap-text"></span></p>
+                                    <p>水位偏向: <span class="handicap-water-bias-text"></span></p>
+                                    <p><strong>判定:</strong> <span class="handicap-anomaly-label-text"></span></p>
+                                    <p>异常分数: <span class="handicap-anomaly-score-text"></span></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card mb-3">
+                                <div class="card-header"><h5>冷门预警</h5></div>
+                                <div class="card-body">
+                                    <p>下狗: <span class="upset-team-text"></span></p>
+                                    <p>融合胜率: <span class="upset-win-prob-text"></span></p>
+                                    <p>风险评分: <span class="upset-score-text"></span> <span class="badge rounded-pill ms-2" id="upset-label-badge">—</span></p>
+                                    <p class="text-muted" id="upset-notes-text"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card mb-3">
+                                <div class="card-header"><h5>比分概率热力图（自适应矩阵）</h5></div>
+                                <div class="card-body">
+                                    <div id="score-heatmap" class="mb-2"></div>
+                                    <div class="heat-legend">深色表示概率更高；坐标轴为主队/客队进球数（0..N）。</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card mb-3">
+                                <div class="card-header"><h5>校准曲线与回测提示</h5></div>
+                                <div class="card-body">
+                                    <canvas id="calibration-curve" height="180"></canvas>
+                                    <div class="mt-2" id="backtest-summary" class="text-muted"></div>
+                                    <div class="handicap-info mt-2" id="backtest-tips"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header d-flex align-items-center justify-content-between">
+                            <h5 class="mb-0">AI综合分析与建议</h5>
+                            <div class="d-flex align-items-center gap-3">
+                                <div id="ai-source-label" class="small text-muted"></div>
+                                <div class="btn-group btn-group-sm" role="group" aria-label="显示格式">
+                                    <button type="button" class="btn btn-outline-primary" id="toggle-text">文本</button>
+                                    <button type="button" class="btn btn-outline-primary" id="toggle-structured">结构化</button>
+                                    <button type="button" class="btn btn-outline-secondary" id="toggle-json">JSON</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <pre class="ai-analysis"></pre>
+                            <div class="analysis-structured" style="display:none"></div>
+                            <pre class="analysis-json" style="display:none"></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card mb-3">
+                    <div class="card-header"><h5 class="chart-title">三路融合概率</h5></div>
+                    <div class="card-body">
+                        <div id="chart-fused" style="width:100%;height:280px;"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card mb-3">
+                    <div class="card-header"><h5 class="chart-title">比分热力图</h5></div>
+                    <div class="card-body">
+                        <div id="chart-heat" style="width:100%;height:280px;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="section-admin" class="container mt-5" style="display: none;">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h3>球队赛季统计查询</h3>
+            </div>
+            <div class="card-body">
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-3">
+                        <label for="query-league" class="form-label">联赛</label>
+                        <select class="form-select" id="query-league">
+                            <option value="">全部</option>
+                            <option>英超</option>
+                            <option>西甲</option>
+                            <option>意甲</option>
+                            <option>德甲</option>
+                            <option>法甲</option>
+                            <option>俄超</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="query-season" class="form-label">赛季</label>
+                        <input type="text" class="form-control" id="query-season" placeholder="2024-2025">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="query-team" class="form-label">球队（可选）</label>
+                        <input type="text" class="form-control" id="query-team" placeholder="如：曼城">
+                    </div>
+                    <div class="col-md-3">
+                        <button class="btn btn-primary w-100" onclick="loadTeamSeasonStats()">查询</button>
+                    </div>
+                    <div class="col-md-12">
+                        <div class="d-flex justify-content-between mb-2">
+                            <div id="team-stats-count" class="text-muted"></div>
+                            <div>
+                                <label class="small me-2">Limit</label>
+                                <input type="number" id="query-limit" class="form-control form-control-sm d-inline-block" style="width:90px" value="50">
+                                <label class="small ms-3 me-2">Offset</label>
+                                <input type="number" id="query-offset" class="form-control form-control-sm d-inline-block" style="width:90px" value="0">
+                            </div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-striped" id="team-stats-table">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>球队</th>
+                                        <th>赛季</th>
+                                        <th>联赛</th>
+                                        <th>xG</th>
+                                        <th>xGA</th>
+                                        <th>xPTS</th>
+                                        <th>备注</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card mb-4">
+            <div class="card-header">
+                <h3>历史样本录入</h3>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label for="match-date" class="form-label">日期</label>
+                        <input type="date" class="form-control" id="match-date">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="match-league" class="form-label">联赛</label>
+                        <input type="text" class="form-control" id="match-league" placeholder="英超">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="match-season" class="form-label">赛季</label>
+                        <input type="text" class="form-control" id="match-season" placeholder="2023-24">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="match-round" class="form-label">轮次（可选）</label>
+                        <input type="text" class="form-control" id="match-round">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="match-home-team" class="form-label">主队</label>
+                        <input type="text" class="form-control" id="match-home-team" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="match-away-team" class="form-label">客队</label>
+                        <input type="text" class="form-control" id="match-away-team" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="match-home-goals" class="form-label">主队进球</label>
+                        <input type="number" class="form-control" id="match-home-goals" min="0">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="match-away-goals" class="form-label">客队进球</label>
+                        <input type="number" class="form-control" id="match-away-goals" min="0">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="match-home-xg" class="form-label">主队xG（可选）</label>
+                        <input type="number" step="0.01" class="form-control" id="match-home-xg">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="match-away-xg" class="form-label">客队xG（可选）</label>
+                        <input type="number" step="0.01" class="form-control" id="match-away-xg">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="match-notes" class="form-label">备注（可选）</label>
+                        <input type="text" class="form-control" id="match-notes" placeholder="可填事件、伤停等">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">公司赔率（可选）</label>
+                        <div id="odds-admin-container" class="odds-container"></div>
+                        <button type="button" class="btn btn-outline-primary btn-sm btn-add-odds" onclick="addOddsRow('odds-admin-container')"><svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path fill-rule="evenodd" d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2Z"/></svg> 添加赔率行</button>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <button class="btn btn-success" onclick="submitManualMatch()">保存样本</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 阵容编辑弹窗：主队 -->
+    <div class="modal fade" id="homeRosterModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">编辑主队阵容</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered align-middle">
+                            <thead>
+                                <tr>
+                                    <th>球员</th>
+                                    <th>位置</th>
+                                    <th style="width:90px">出场</th>
+                                    <th style="width:100px">分钟</th>
+                                    <th style="width:90px">进球</th>
+                                    <th style="width:90px">助攻</th>
+                                    <th style="width:100px">评分</th>
+                                    <th style="width:110px">身价(万)</th>
+                                    <th style="width:70px">伤病</th>
+                                    <th style="width:70px">停赛</th>
+                                    <th style="width:60px">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="home-roster-rows"></tbody>
+                        </table>
+                    </div>
+                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="addRosterRow('home')">添加球员</button>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" onclick="saveRoster('home')">保存阵容</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 阵容编辑弹窗：客队 -->
+    <div class="modal fade" id="awayRosterModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">编辑客队阵容</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered align-middle">
+                            <thead>
+                                <tr>
+                                    <th>球员</th>
+                                    <th>位置</th>
+                                    <th style="width:90px">出场</th>
+                                    <th style="width:100px">分钟</th>
+                                    <th style="width:90px">进球</th>
+                                    <th style="width:90px">助攻</th>
+                                    <th style="width:100px">评分</th>
+                                    <th style="width:110px">身价(万)</th>
+                                    <th style="width:70px">伤病</th>
+                                    <th style="width:70px">停赛</th>
+                                    <th style="width:60px">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="away-roster-rows"></tbody>
+                        </table>
+                    </div>
+                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="addRosterRow('away')">添加球员</button>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" onclick="saveRoster('away')">保存阵容</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="section-import" class="container mt-5" style="display: none;">
+        <div class="text-center mb-4">
+            <h1>数据导入</h1>
+            <p class="lead">下载模板，填写球队每日指标并上传入库</p>
+        </div>
+        <div class="card mb-4">
+            <div class="card-header"><h3>模板下载</h3></div>
+            <div class="card-body">
+                <button class="btn btn-outline-primary me-2" onclick="downloadTemplate('xlsx')">下载 Excel 模板</button>
+                <button class="btn btn-outline-secondary" onclick="downloadTemplate('csv')">下载 CSV 模板</button>
+                <p class="small text-muted mt-2">采用紧凑表头：№, Team, Season, M, W, D, L, G, GA, PTS, xG, NPxG, xGA, NPxGA, NPxGD, PPDA, OPPDA, DC, ODC, xPTS；导入时自动映射并默认填充当天日期。</p>
+            </div>
+        </div>
+        <div class="card mb-4">
+            <div class="card-header"><h3>上传导入</h3></div>
+            <div class="card-body">
+                <input type="file" id="team-metrics-file" accept=".xlsx,.csv" class="form-control" />
+                <div class="mt-3">
+                    <button class="btn btn-success" onclick="uploadTeamMetrics()">上传并导入</button>
+                </div>
+                <div id="import-result" class="mt-3"></div>
+            </div>
+        </div>
+        <div class="card mb-4">
+            <div class="card-header"><h3>队名映射导入</h3></div>
+            <div class="card-body">
+                <p class="small text-muted">支持 Excel/CSV。至少包含“中文名/规范名”和“英文名/别名”列；可选“联赛”“语言”。</p>
+                <input type="file" id="team-aliases-file" accept=".xlsx,.csv" class="form-control" />
+                <div class="mt-3">
+                    <button class="btn btn-outline-success" onclick="uploadTeamAliases()">上传并导入队名映射</button>
+                </div>
+                <div id="import-aliases-result" class="mt-3"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="section-settings" class="container mt-5" style="display: none;">
+        <div class="text-center mb-4">
+            <h1>系统设置</h1>
+            <p class="lead">调整外部 AI 与 GRU 模型的在线开关</p>
+        </div>
+        <div class="card mb-4">
+            <div class="card-header"><h3>运行配置</h3></div>
+            <div class="card-body">
+                <div class="row g-3 align-items-center">
+                    <div class="col-md-4">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="cfg-require-ai-api">
+                            <label class="form-check-label" for="cfg-require-ai-api">启用外部 AI</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label" for="cfg-gru-leagues">GRU 启用联赛集合</label>
+                        <input type="text" class="form-control" id="cfg-gru-leagues" placeholder="意甲,serie a,serie_ligue">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label" for="cfg-gru-weight">GRU 融合权重 (0–1) <span id="cfg-gru-weight-val" class="ms-2 text-muted">0.50</span></label>
+                        <input type="range" class="form-range" id="cfg-gru-weight" min="0" max="1" step="0.01" value="0.50">
+                    </div>
+                </div>
+                <div class="mt-3 d-flex gap-2">
+                    <button class="btn btn-primary" onclick="saveRuntimeConfig()">保存</button>
+                    <button class="btn btn-outline-secondary" onclick="loadRuntimeConfig()">刷新</button>
+                    <div id="cfg-status" class="ms-3 small text-muted"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const handicapOptions = [
+            -2.0, -1.75, -1.5, -1.25, -1.0, -0.75, -0.5, -0.25, 0.0, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0
+        ];
+
+        // Chart 实例缓存，避免重复创建
+        let histVsCurChart = null;
+let handicapMeanChart = null;
+let calibrationChart = null;
+
+        // 标签切换
+        function switchTab(tab) {
+            const predict = document.getElementById('section-predict');
+            const admin = document.getElementById('section-admin');
+            const imp = document.getElementById('section-import');
+            const settings = document.getElementById('section-settings');
+            if (predict) predict.style.display = (tab === 'predict' ? '' : 'none');
+            if (admin) admin.style.display = (tab === 'admin' ? '' : 'none');
+            if (imp) imp.style.display = (tab === 'import' ? '' : 'none');
+            if (settings) settings.style.display = (tab === 'settings' ? '' : 'none');
+            const links = document.querySelectorAll('#main-tabs .nav-link');
+            links.forEach(l => l.classList.remove('active'));
+            if (tab === 'predict' && links[0]) links[0].classList.add('active');
+            if (tab === 'admin' && links[1]) links[1].classList.add('active');
+            if (tab === 'import' && links[2]) links[2].classList.add('active');
+            if (tab === 'settings' && links[3]) links[3].classList.add('active');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        async function loadRuntimeConfig() {
+            try {
+                const base = await getApiBase();
+                const resp = await fetch(base + '/api/admin/config', { method: 'GET' });
+                if (!resp.ok) throw new Error('配置读取失败');
+                const data = await resp.json();
+                const ai = document.getElementById('cfg-require-ai-api');
+                const leagues = document.getElementById('cfg-gru-leagues');
+                const weight = document.getElementById('cfg-gru-weight');
+                const wv = document.getElementById('cfg-gru-weight-val');
+                if (ai) ai.checked = !!data.require_ai_api;
+                if (leagues && typeof data.gru_enabled_leagues === 'string') leagues.value = data.gru_enabled_leagues;
+                const w = parseFloat(data.gru_model_weight);
+                if (!Number.isNaN(w)) { weight.value = w; wv.textContent = w.toFixed(2); }
+                const st = document.getElementById('cfg-status');
+                if (st) st.textContent = '已加载当前配置';
+            } catch (e) {
+                const st = document.getElementById('cfg-status');
+                if (st) st.textContent = '配置读取失败';
+            }
+        }
+
+        async function saveRuntimeConfig() {
+            try {
+                const base = await getApiBase();
+                const ai = document.getElementById('cfg-require-ai-api');
+                const leagues = document.getElementById('cfg-gru-leagues');
+                const weight = document.getElementById('cfg-gru-weight');
+                const payload = {
+                    require_ai_api: ai && ai.checked ? true : false,
+                    gru_enabled_leagues: leagues ? leagues.value : '',
+                    gru_model_weight: weight ? parseFloat(weight.value) : 0.5
+                };
+                const resp = await fetch(base + '/api/admin/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                if (!resp.ok) throw new Error('配置保存失败');
+                const data = await resp.json();
+                const st = document.getElementById('cfg-status');
+                if (st) st.textContent = '已保存';
+                const weightVal = document.getElementById('cfg-gru-weight-val');
+                if (weightVal) weightVal.textContent = Number(data.gru_model_weight).toFixed(2);
+            } catch (e) {
+                const st = document.getElementById('cfg-status');
+                if (st) st.textContent = '保存失败';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const w = document.getElementById('cfg-gru-weight');
+            const wv = document.getElementById('cfg-gru-weight-val');
+            if (w && wv) { w.addEventListener('input', () => { const val = parseFloat(w.value); if (!Number.isNaN(val)) { wv.textContent = val.toFixed(2); } }); }
+            loadRuntimeConfig();
+            try {
+                const url = new URL(window.location.href);
+                const qtab = (url.searchParams.get('tab') || '').toLowerCase();
+                const htab = (window.location.hash || '').replace('#','').toLowerCase();
+                const tab = qtab || htab;
+                if (tab === 'settings' || tab === 'admin' || tab === 'import' || tab === 'predict') {
+                    switchTab(tab);
+                }
+            } catch (e) {}
+        });
+
+        async function downloadTemplate(format) {
+            try {
+                const base = await getApiBase();
+                const url = base + `/api/admin/team-metrics/template?format=${format}&style=compact`;
+                const resp = await fetch(url);
+                if (!resp.ok) throw new Error('模板下载失败');
+                const blob = await resp.blob();
+                const a = document.createElement('a');
+                const fname = format === 'xlsx' ? 'team_metrics_template_compact.xlsx' : 'team_metrics_template_compact.csv';
+                a.href = URL.createObjectURL(blob);
+                a.download = fname;
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+            } catch (e) {
+                console.error('下载失败', e);
+                alert('下载模板失败，请稍后重试。');
+            }
+        }
+
+        async function uploadTeamMetrics() {
+            try {
+                const fileInput = document.getElementById('team-metrics-file');
+                const resultEl = document.getElementById('import-result');
+                resultEl.textContent = '';
+                if (!fileInput.files || fileInput.files.length === 0) {
+                    alert('请选择要上传的文件');
+                    return;
+                }
+                // 覆盖确认弹窗
+                const okConfirm = confirm('本次导入将覆盖现有数据（按文件包含赛季范围）。是否继续？');
+                if (!okConfirm) { return; }
+                const file = fileInput.files[0];
+                const fd = new FormData();
+                fd.append('file', file);
+                const base = await getApiBase();
+                const resp = await fetch(base + '/api/admin/team-metrics/import', { method: 'POST', body: fd });
+                if (!resp.ok) throw new Error('导入接口调用失败');
+                const data = await resp.json();
+                const ok = Number(data.imported || 0);
+                const overwritten = Number(data.overwritten || 0);
+                const errs = Array.isArray(data.errors) ? data.errors : [];
+                resultEl.innerHTML = `<div class="alert alert-info">导入成功 ${ok} 条。${overwritten ? '覆盖删除 ' + overwritten + ' 条旧数据。' : ''}${errs.length ? '有错误行：' + errs.length : ''}</div>`;
+                if (errs.length) {
+                    const ul = document.createElement('ul');
+                    ul.className = 'small text-danger';
+                    errs.slice(0, 10).forEach(e => {
+                        const li = document.createElement('li');
+                        li.textContent = `行 ${e.row}: ${e.error}`;
+                        ul.appendChild(li);
+                    });
+                    resultEl.appendChild(ul);
+                }
+            } catch (e) {
+                console.error('导入失败', e);
+                alert('导入过程中发生错误，请检查文件格式与必填字段。');
+            }
+        }
+
+        async function uploadTeamAliases() {
+            try {
+                const fileInput = document.getElementById('team-aliases-file');
+                const resultEl = document.getElementById('import-aliases-result');
+                resultEl.textContent = '';
+                if (!fileInput.files || fileInput.files.length === 0) {
+                    alert('请选择要上传的映射文件');
+                    return;
+                }
+                const file = fileInput.files[0];
+                const fd = new FormData();
+                fd.append('file', file);
+                const base = await getApiBase();
+                const resp = await fetch(base + '/api/admin/team-aliases/import', { method: 'POST', body: fd });
+                if (!resp.ok) throw new Error('映射导入接口调用失败');
+                const data = await resp.json();
+                const ok = Number(data.imported || 0);
+                resultEl.innerHTML = `<div class="alert alert-success">映射导入成功 ${ok} 条。</div>`;
+            } catch (e) {
+                console.error('映射导入失败', e);
+                alert('映射导入过程中发生错误，请检查文件列名与格式。');
+            }
+        }
+
+        function extractNumbers(val) {
+            if (val === null || val === undefined) return [];
+            if (typeof val === 'number') return [val];
+            const s = String(val);
+            const matches = s.match(/[+-]?\d+(?:\.\d+)?/g);
+            if (!matches) return [];
+            return matches.map(n => parseFloat(n)).filter(x => !Number.isNaN(x));
+        }
+
+        function formatHandicap(n) {
+            if (n === null || n === undefined || Number.isNaN(n)) return '—';
+            return n > 0 ? `+${n.toFixed(2)}` : n.toFixed(2);
+        }
+
+        function populateHandicapSelect(selectElement) {
+            handicapOptions.forEach(option => {
+                const optionElement = document.createElement('option');
+                optionElement.value = option > 0 ? ('+' + option.toFixed(2)) : option.toFixed(2);
+                optionElement.textContent = option > 0 ? `+${option.toFixed(2)}` : option.toFixed(2);
+                selectElement.appendChild(optionElement);
+            });
+        }
+
+        // —— 自动探测后端 API 基地址（支持 ?api 覆盖；候选 5533/5518/5527/3310/3309/5517/同源/127.0.0.1） ——
+        let __API_BASE_CACHE = null;
+        async function getApiBase() {
+            if (__API_BASE_CACHE !== null) return __API_BASE_CACHE;
+            const override = new URLSearchParams(window.location.search).get('api');
+            if (override && typeof override === 'string') { __API_BASE_CACHE = override; return override; }
+            const host = window.location.hostname;
+            const proto = window.location.protocol;
+            const lh = '127.0.0.1';
+            const candidates = [
+                // 同源优先（如果前端与后端同端口托管）
+                '',
+                // 常用后端端口（包括当前工作区活跃端口）
+                `${proto}//${host}:5512`, `${proto}//${host}:5533`, `${proto}//${host}:5519`, `${proto}//${host}:5518`, `${proto}//${host}:5527`, `${proto}//${host}:3310`, `${proto}//${host}:3309`, `${proto}//${host}:5517`,
+                // 本机直连（有些服务仅绑定 127.0.0.1）
+                `${proto}//${lh}:5512`, `${proto}//${lh}:5533`, `${proto}//${lh}:5519`, `${proto}//${lh}:5518`, `${proto}//${lh}:5527`, `${proto}//${lh}:3310`, `${proto}//${lh}:3309`, `${proto}//${lh}:5517`
+            ];
+            for (const base of candidates) {
+                try {
+                    const resp = await fetch(base + '/api/companies', { method: 'GET' });
+                    if (resp.ok) { __API_BASE_CACHE = base; return base; }
+                } catch (e) { /* ignore */ }
+            }
+            __API_BASE_CACHE = '';
+            return '';
+        }
+
+        // —— 将后端返回的球队指标填入页面输入框 ——
+        function setVal(id, v) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            if (v === null || v === undefined || Number.isNaN(v)) return;
+            el.value = typeof v === 'number' ? v : String(v);
+        }
+        function fillTeamInputs(side, m) {
+            // 基础指标
+            setVal(`${side}-games-played`, m.games_played);
+            setVal(`${side}-xg`, m.xg);
+            setVal(`${side}-xga`, m.xga);
+            setVal(`${side}-xpts`, m.xpts);
+            // 可选指标
+            setVal(`${side}-npxg`, m.npxg);
+            setVal(`${side}-npxga`, m.npxga);
+            setVal(`${side}-ppda`, m.ppda);
+            setVal(`${side}-oppda`, m.oppda);
+            setVal(`${side}-dc`, m.dc);
+            setVal(`${side}-odc`, m.odc);
+            // 扩展：积分、胜平负与NPxGD（若后端返回）
+            setVal(`${side}-points`, m.points);
+            setVal(`${side}-wins`, m.wins);
+            setVal(`${side}-draws`, m.draws);
+            setVal(`${side}-losses`, m.losses);
+            setVal(`${side}-xpxgd`, m.xpxgd);
+            // 赛季进球/失球（若页面有）
+            setVal(`${side}-season-goals-for`, m.goals_for);
+            setVal(`${side}-season-goals-against`, m.goals_against);
+        }
+
+        // —— 根据球队名称自动填充 ——
+        async function autoFillTeamMetrics(side) {
+            try {
+                const nameEl = document.getElementById(`${side}-team-name`);
+                if (!nameEl) return;
+                const team = (nameEl.value || '').trim();
+                if (!team) return;
+                // 可选：若页面存在赛季输入，则带上
+                const seasonEl = document.getElementById('match-season');
+                const season = seasonEl && seasonEl.value ? seasonEl.value.trim() : '';
+                const base = await getApiBase();
+                const params = new URLSearchParams({ team });
+                if (season) params.append('season', season);
+                const resp = await fetch(base + '/api/teams/metrics?' + params.toString());
+                if (resp.status === 404) {
+                    alert('未找到该球队的赛季指标，请核实队名或赛季是否正确。');
+                    return;
+                }
+                if (!resp.ok) throw new Error('请求球队指标失败');
+                const data = await resp.json();
+                fillTeamInputs(side, data);
+            } catch (e) {
+                console.warn('自动填充失败', e);
+            }
+        }
+
+        // —— 为球队名称输入框绑定事件：失焦/变更即自动填充 ——
+        document.addEventListener('DOMContentLoaded', () => {
+            const homeInput = document.getElementById('home-team-name');
+            const awayInput = document.getElementById('away-team-name');
+            if (homeInput) {
+                homeInput.addEventListener('blur', () => autoFillTeamMetrics('home'));
+                homeInput.addEventListener('change', () => autoFillTeamMetrics('home'));
+            }
+            if (awayInput) {
+                awayInput.addEventListener('blur', () => autoFillTeamMetrics('away'));
+                awayInput.addEventListener('change', () => autoFillTeamMetrics('away'));
+            }
+        });
+
+        function addOddsRow(containerId = 'odds-container') {
+            const container = document.getElementById(containerId);
+            const newRow = document.createElement('div');
+            newRow.className = 'odds-row border p-3 mb-3 rounded';
+            newRow.innerHTML = `
+                <div class="row g-2">
+                    <div class="col-12"><div class="section-subtitle">欧赔（三项）</div></div>
+                    <div class="col-md-2">
+                        <label class="form-label">公司</label>
+                        <select class="form-select company-name"></select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">初盘主胜</label>
+                        <input type="number" step="0.01" class="form-control initial-home-win">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">初盘平局</label>
+                        <input type="number" step="0.01" class="form-control initial-draw">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">初盘客胜</label>
+                        <input type="number" step="0.01" class="form-control initial-away-win">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">终盘主胜</label>
+                        <input type="number" step="0.01" class="form-control final-home-win">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">终盘平局</label>
+                        <input type="number" step="0.01" class="form-control final-draw">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">终盘客胜</label>
+                        <input type="number" step="0.01" class="form-control final-away-win">
+                    </div>
+                </div>
+                <div class="row g-2">
+                    <div class="col-12"><div class="section-subtitle">让球盘与赔率</div></div>
+                    <div class="col-md-2">
+                        <label class="form-label">初盘让球（正号=主受让，负号=主让）</label>
+                        <select class="form-select initial-handicap"></select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">初盘主赔</label>
+                        <input type="number" step="0.01" class="form-control initial-handicap-home-odds">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">初盘客赔</label>
+                        <input type="number" step="0.01" class="form-control initial-handicap-away-odds">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">终盘让球（正号=主受让，负号=主让）</label>
+                        <select class="form-select final-handicap"></select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">终盘主赔</label>
+                        <input type="number" step="0.01" class="form-control final-handicap-home-odds">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">终盘客赔</label>
+                        <input type="number" step="0.01" class="form-control final-handicap-away-odds">
+                    </div>
+                </div>
+                <div class="row mt-2">
+                    <div class="col-md-2">
+                        <button type="button" class="btn btn-danger btn-sm" onclick="this.closest('.odds-row').remove()">
+                            <i class="fas fa-trash"></i> 删除
+                        </button>
+                    </div>
+                </div>
+            `;
+            container.appendChild(newRow);
+            newRow.querySelectorAll('.initial-handicap, .final-handicap').forEach(populateHandicapSelect);
+            // 同步公司下拉选项
+            const companySelect = newRow.querySelector('.company-name');
+            populateCompanySelect(companySelect);
+        }
+
+        function getStageIconSvg(stage) {
+            switch (stage) {
+                case 1: // 下载/收集
+                    return '<svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path fill-rule="evenodd" d="M8 1.5a.5.5 0 0 1 .5.5v6.793l2.146-2.147a.5.5 0 1 1 .708.708l-3 3a.5.5 0 0 1-.708 0l-3-3a.5.5 0 0 1 .708-.708L7.5 8.793V2a.5.5 0 0 1 .5-.5Z"/><path d="M2 13.5a.5.5 0 0 1 .5-.5h11a.5.5 0 1 1 0 1h-11a.5.5 0 0 1-.5-.5Z"/></svg>';
+                case 2: // 计算/处理
+                    return '<svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1a1 1 0 0 1 1 1v1.06a5.002 5.002 0 0 1 3.94 3.94H14a1 1 0 1 1 0 2h-1.06a5.002 5.002 0 0 1-3.94 3.94V14a1 1 0 1 1-2 0v-1.06a5.002 5.002 0 0 1-3.94-3.94H2a1 1 0 1 1 0-2h1.06a5.002 5.002 0 0 1 3.94-3.94V2a1 1 0 0 1 1-1Z"/></svg>';
+                case 3: // 合并/完成
+                default:
+                    return '<svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 5.5A2.5 2.5 0 0 1 6 3h4a2.5 2.5 0 1 1 0 5H8a2.5 2.5 0 0 1-2.5-2.5Z"/><path d="M2 11a2 2 0 0 1 2-2h8a2 2 0 1 1 0 4H4a2 2 0 0 1-2-2Z"/></svg>';
+            }
+        }
+
+        function updateProgress(percentage, text) {
+            const progressBar = document.getElementById('progress-bar');
+            const progressText = document.getElementById('progress-text');
+            const percentEl = document.getElementById('progress-percent');
+            const to = Math.max(0, Math.min(100, Number(percentage) || 0));
+            progressBar.style.width = `${to}%`;
+            progressBar.setAttribute('aria-valuenow', to);
+            if (percentEl) percentEl.textContent = `${to}%`;
+            if (typeof text === 'string') progressText.textContent = text || '';
+        }
+
+        function cancelProgress() {
+            try {
+                if (window._predictAbortController) {
+                    window._predictAbortController.abort();
+                    window._predictAbortController = null;
+                }
+            } catch {}
+            const progressDiv = document.getElementById('progress-div');
+            const progressBar = document.getElementById('progress-bar');
+            const percentEl = document.getElementById('progress-percent');
+            const progressText = document.getElementById('progress-text');
+            progressBar.style.width = '0%';
+            progressBar.setAttribute('aria-valuenow', 0);
+            if (percentEl) percentEl.textContent = '0%';
+            progressText.textContent = '';
+            progressDiv.style.display = 'none';
+        }
+
+        // —— 新增：临时阵容状态与弹窗操作 ——
+        window.tempRosters = { home: [], away: [] };
+
+        function updateRosterSummary(side) {
+            const items = Array.isArray(window.tempRosters[side]) ? window.tempRosters[side] : [];
+            const inj = items.filter(x => x.injured).length;
+            const sus = items.filter(x => x.suspended).length;
+            const summaryEl = document.getElementById(side === 'home' ? 'home-roster-summary' : 'away-roster-summary');
+            if (summaryEl) {
+                if (items.length === 0) {
+                    summaryEl.textContent = '未设置阵容';
+                } else {
+                    summaryEl.textContent = `已添加 ${items.length} 人（伤病 ${inj}，停赛 ${sus}）`;
+                }
+            }
+        }
+
+        function openRosterModal(side) {
+            const modalId = side === 'home' ? 'homeRosterModal' : 'awayRosterModal';
+            const tbody = document.getElementById(`${side}-roster-rows`);
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            const items = Array.isArray(window.tempRosters[side]) ? window.tempRosters[side] : [];
+            const addRowHtml = (it = {}) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><input type="text" class="form-control form-control-sm ri-name" placeholder="球员" value="${it.player_name ?? ''}"></td>
+                    <td><input type="text" class="form-control form-control-sm ri-pos" placeholder="位置" value="${it.position ?? ''}"></td>
+                    <td style="width:90px"><input type="number" class="form-control form-control-sm ri-app" placeholder="出场" value="${it.appearances ?? ''}"></td>
+                    <td style="width:100px"><input type="number" class="form-control form-control-sm ri-min" placeholder="分钟" value="${it.minutes ?? ''}"></td>
+                    <td style="width:90px"><input type="number" class="form-control form-control-sm ri-goals" placeholder="进球" value="${it.goals ?? ''}"></td>
+                    <td style="width:90px"><input type="number" class="form-control form-control-sm ri-assists" placeholder="助攻" value="${it.assists ?? ''}"></td>
+                    <td style="width:100px"><input type="number" step="0.01" class="form-control form-control-sm ri-rating" placeholder="评分" value="${it.rating ?? ''}"></td>
+                    <td style="width:110px"><input type="number" step="0.01" class="form-control form-control-sm ri-mv" placeholder="身价(万)" value="${it.market_value ?? ''}"></td>
+                    <td class="text-center" style="width:70px"><input type="checkbox" class="form-check-input ri-inj" ${it.injured ? 'checked' : ''}></td>
+                    <td class="text-center" style="width:70px"><input type="checkbox" class="form-check-input ri-sus" ${it.suspended ? 'checked' : ''}></td>
+                    <td style="width:60px"><button type="button" class="btn btn-sm btn-outline-danger" onclick="this.closest('tr').remove()">删除</button></td>
+                `;
+                tbody.appendChild(tr);
+            };
+            if (items.length === 0) addRowHtml(); else items.forEach(addRowHtml);
+            const modalEl = document.getElementById(modalId);
+            const m = new bootstrap.Modal(modalEl);
+            m.show();
+        }
+
+        function addRosterRow(side) {
+            const tbody = document.getElementById(`${side}-roster-rows`);
+            if (!tbody) return;
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><input type="text" class="form-control form-control-sm ri-name" placeholder="球员"></td>
+                <td><input type="text" class="form-control form-control-sm ri-pos" placeholder="位置"></td>
+                <td style="width:90px"><input type="number" class="form-control form-control-sm ri-app" placeholder="出场"></td>
+                <td style="width:100px"><input type="number" class="form-control form-control-sm ri-min" placeholder="分钟"></td>
+                <td style="width:90px"><input type="number" class="form-control form-control-sm ri-goals" placeholder="进球"></td>
+                <td style="width:90px"><input type="number" class="form-control form-control-sm ri-assists" placeholder="助攻"></td>
+                <td style="width:100px"><input type="number" step="0.01" class="form-control form-control-sm ri-rating" placeholder="评分"></td>
+                <td style="width:110px"><input type="number" step="0.01" class="form-control form-control-sm ri-mv" placeholder="身价(万)"></td>
+                <td class="text-center" style="width:70px"><input type="checkbox" class="form-check-input ri-inj"></td>
+                <td class="text-center" style="width:70px"><input type="checkbox" class="form-check-input ri-sus"></td>
+                <td style="width:60px"><button type="button" class="btn btn-sm btn-outline-danger" onclick="this.closest('tr').remove()">删除</button></td>
+            `;
+            tbody.appendChild(tr);
+        }
+
+        function saveRoster(side) {
+            const tbody = document.getElementById(`${side}-roster-rows`);
+            if (!tbody) return;
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            const items = rows.map(tr => {
+                const getVal = (sel) => tr.querySelector(sel)?.value ?? '';
+                const numOrNull = (sel, isFloat=false) => {
+                    const raw = getVal(sel);
+                    if (raw === '' || raw == null) return undefined;
+                    const n = isFloat ? parseFloat(raw) : parseInt(raw);
+                    return Number.isFinite(n) ? n : undefined;
+                };
+                return {
+                    player_name: getVal('.ri-name').trim(),
+                    position: getVal('.ri-pos').trim() || undefined,
+                    appearances: numOrNull('.ri-app'),
+                    minutes: numOrNull('.ri-min'),
+                    goals: numOrNull('.ri-goals'),
+                    assists: numOrNull('.ri-assists'),
+                    rating: numOrNull('.ri-rating', true),
+                    market_value: numOrNull('.ri-mv', true),
+                    injured: !!tr.querySelector('.ri-inj')?.checked,
+                    suspended: !!tr.querySelector('.ri-sus')?.checked,
+                };
+            }).filter(it => it.player_name);
+            window.tempRosters[side] = items;
+            updateRosterSummary(side);
+            const modalId = side === 'home' ? 'homeRosterModal' : 'awayRosterModal';
+            const modalEl = document.getElementById(modalId);
+            const inst = bootstrap.Modal.getInstance(modalEl);
+            if (inst) inst.hide();
+        }
+
+        function collectRosterForSubmit(side) {
+            const items = Array.isArray(window.tempRosters[side]) ? window.tempRosters[side] : [];
+            return items.map(it => ({
+                player_name: it.player_name,
+                appearances: it.appearances,
+                starts: it.starts, // 目前未采集，保留字段以兼容后端
+                minutes: it.minutes,
+                goals: it.goals,
+                assists: it.assists,
+                rating: it.rating,
+                market_value: it.market_value,
+                injured: it.injured,
+                suspended: it.suspended,
+            }));
+        }
+
+        async function submitData() {
+            try {
+                // 显示进度条
+                const progressDiv = document.getElementById('progress-div');
+                const analysisReport = document.getElementById('analysis-report');
+                progressDiv.style.display = 'block';
+                analysisReport.style.display = 'none';
+                
+                updateProgress(20, '收集球队数据...');
+                
+                // 收集主队数据
+                const homeTeam = {
+                    name: document.getElementById('home-team-name').value,
+                    formation: (document.getElementById('home-formation').value || '').trim() || undefined,
+                    ranking: parseInt(document.getElementById('home-team-ranking').value),
+                    games_played: parseInt(document.getElementById('home-games-played').value),
+                    xg: parseFloat(document.getElementById('home-xg').value),
+                    xga: parseFloat(document.getElementById('home-xga').value),
+                    xpts: parseFloat(document.getElementById('home-xpts').value),
+                    goals_for: parseInt(document.getElementById('home-season-goals-for').value),
+                    goals_against: parseInt(document.getElementById('home-season-goals-against').value)
+                };
+                // 可选指标采集助手
+                const addOptionalMetric = (obj, id, key) => {
+                    const el = document.getElementById(id);
+                    if (!el) return;
+                    const v = parseFloat(el.value);
+                    if (Number.isFinite(v)) obj[key] = v;
+                };
+                const addOptionalInt = (obj, id, key) => {
+                    const el = document.getElementById(id);
+                    if (!el) return;
+                    const v = parseInt(el.value);
+                    if (Number.isFinite(v)) obj[key] = v;
+                };
+                addOptionalMetric(homeTeam, 'home-npxg', 'npxg');
+                addOptionalMetric(homeTeam, 'home-npxga', 'npxga');
+                addOptionalMetric(homeTeam, 'home-ppda', 'ppda');
+                addOptionalMetric(homeTeam, 'home-oppda', 'oppda');
+                addOptionalMetric(homeTeam, 'home-dc', 'dc');
+                addOptionalMetric(homeTeam, 'home-odc', 'odc');
+                addOptionalMetric(homeTeam, 'home-xpxgd', 'xpxgd');
+                addOptionalInt(homeTeam, 'home-points', 'points');
+                addOptionalInt(homeTeam, 'home-wins', 'wins');
+                addOptionalInt(homeTeam, 'home-draws', 'draws');
+                addOptionalInt(homeTeam, 'home-losses', 'losses');
+                
+                // 收集客队数据
+                const awayTeam = {
+                    name: document.getElementById('away-team-name').value,
+                    formation: (document.getElementById('away-formation').value || '').trim() || undefined,
+                    ranking: parseInt(document.getElementById('away-team-ranking').value),
+                    games_played: parseInt(document.getElementById('away-games-played').value),
+                    xg: parseFloat(document.getElementById('away-xg').value),
+                    xga: parseFloat(document.getElementById('away-xga').value),
+                    xpts: parseFloat(document.getElementById('away-xpts').value),
+                    goals_for: parseInt(document.getElementById('away-season-goals-for').value),
+                    goals_against: parseInt(document.getElementById('away-season-goals-against').value)
+                };
+                addOptionalMetric(awayTeam, 'away-npxg', 'npxg');
+                addOptionalMetric(awayTeam, 'away-npxga', 'npxga');
+                addOptionalMetric(awayTeam, 'away-ppda', 'ppda');
+                addOptionalMetric(awayTeam, 'away-oppda', 'oppda');
+                addOptionalMetric(awayTeam, 'away-dc', 'dc');
+                addOptionalMetric(awayTeam, 'away-odc', 'odc');
+                addOptionalMetric(awayTeam, 'away-xpxgd', 'xpxgd');
+                addOptionalInt(awayTeam, 'away-points', 'points');
+                addOptionalInt(awayTeam, 'away-wins', 'wins');
+                addOptionalInt(awayTeam, 'away-draws', 'draws');
+                addOptionalInt(awayTeam, 'away-losses', 'losses');
+                
+                // 基础校验：主客队必填且数值字段有效
+                const requiredTeamNums = ['ranking','games_played','xg','xga','xpts','goals_for','goals_against'];
+                const teamInvalid = (
+                    !homeTeam.name || !awayTeam.name ||
+                    requiredTeamNums.some(k => !Number.isFinite(homeTeam[k])) ||
+                    requiredTeamNums.some(k => !Number.isFinite(awayTeam[k]))
+                );
+                if (teamInvalid) {
+                    alert('请完整填写主客队名称及数值字段（排名、场次、xG/xGA/xPts、赛季进球/失球）。');
+                    const progressDiv = document.getElementById('progress-div');
+                    progressDiv.style.display = 'none';
+                    return;
+                }
+                
+                updateProgress(40, '收集赔率数据...');
+                
+                // 收集赔率数据（过滤掉未填写完整的行）
+                const oddsDataRaw = [];
+                document.querySelectorAll('.odds-row').forEach(row => {
+                    const entry = {
+                        company: row.querySelector('.company-name').value,
+                        initial_home_win: parseFloat(row.querySelector('.initial-home-win').value),
+                        initial_draw: parseFloat(row.querySelector('.initial-draw').value),
+                        initial_away_win: parseFloat(row.querySelector('.initial-away-win').value),
+                        final_home_win: parseFloat(row.querySelector('.final-home-win').value),
+                        final_draw: parseFloat(row.querySelector('.final-draw').value),
+                        final_away_win: parseFloat(row.querySelector('.final-away-win').value),
+                        initial_handicap: row.querySelector('.initial-handicap').value,
+                        final_handicap: row.querySelector('.final-handicap').value,
+                        initial_handicap_home_odds: parseFloat(row.querySelector('.initial-handicap-home-odds').value),
+                        initial_handicap_away_odds: parseFloat(row.querySelector('.initial-handicap-away-odds').value),
+                        final_handicap_home_odds: parseFloat(row.querySelector('.final-handicap-home-odds').value),
+                        final_handicap_away_odds: parseFloat(row.querySelector('.final-handicap-away-odds').value)
+                    };
+                    oddsDataRaw.push(entry);
+                });
+                const oddsData = oddsDataRaw.filter(entry => {
+                    const nums = [
+                        entry.initial_home_win, entry.initial_draw, entry.initial_away_win,
+                        entry.final_home_win, entry.final_draw, entry.final_away_win,
+                        entry.initial_handicap_home_odds, entry.initial_handicap_away_odds,
+                        entry.final_handicap_home_odds, entry.final_handicap_away_odds
+                    ];
+                    const strsOk = entry.company && entry.initial_handicap && entry.final_handicap;
+                    const numsOk = nums.every(v => Number.isFinite(v));
+                    return strsOk && numsOk;
+                });
+                if (oddsData.length === 0) {
+                    alert('请至少填写一行完整的公司赔率与盘口数据（初/终盘及水位）。');
+                    const progressDiv = document.getElementById('progress-div');
+                    progressDiv.style.display = 'none';
+                    return;
+                }
+
+                updateProgress(60, '发送数据到预测引擎...');
+                const payload = {
+                    home_team: homeTeam,
+                    away_team: awayTeam,
+                    odds_data: oddsData
+                };
+                const _lpSel = document.getElementById('league-preset');
+                if (_lpSel && _lpSel.value && _lpSel.value.trim()) {
+                    payload.league_preset = _lpSel.value.trim();
+                }
+        
+                const homeRoster = collectRosterForSubmit('home');
+                const awayRoster = collectRosterForSubmit('away');
+                if (homeRoster.length > 0) payload.home_roster = homeRoster;
+                if (awayRoster.length > 0) payload.away_roster = awayRoster;
+                console.log('提交 JSON:', payload);
+                const base = await getApiBase();
+                // 支持取消：若已存在控制器先中止旧请求
+                try { if (window._predictAbortController) window._predictAbortController.abort(); } catch {}
+                window._predictAbortController = new AbortController();
+                const response = await fetch(base + '/api/predict', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload),
+                    signal: window._predictAbortController.signal
+                });
+
+                if (!response.ok) {
+                    let err = {};
+                    try { err = await response.json(); } catch (e) {}
+                    console.error('预测接口错误:', response.status, err);
+                    alert(`预测请求失败：${response.status} ${err?.detail ? JSON.stringify(err.detail) : ''}`);
+                    const progressDiv = document.getElementById('progress-div');
+                    progressDiv.style.display = 'none';
+                    return;
+                }
+
+                updateProgress(80, '处理预测结果...');
+                const data = await response.json();
+
+                // 更新分析reported显示
+                updateProgress(100, '分析完成');
+                setTimeout(() => {
+                    progressDiv.style.display = 'none';
+                    analysisReport.style.display = 'block';
+                    
+                    // 更新定量模型分析结果
+                    document.querySelector('.model-home-win').textContent = `${(data.home_win_prob * 100).toFixed(2)}%`;
+                    document.querySelector('.model-draw').textContent = `${(data.draw_prob * 100).toFixed(2)}%`;
+                    document.querySelector('.model-away-win').textContent = `${(data.away_win_prob * 100).toFixed(2)}%`;
+                    
+                    // 更新最可能比分
+                    const likelyScoresList = document.querySelector('.likely-scores');
+                    likelyScoresList.innerHTML = data.likely_scores
+                        .map(score => `<li>${score.score} (${(score.probability * 100).toFixed(2)}%)</li>`)
+                        .join('');
+                    
+                    // 更新市场共识分析结果
+                    document.querySelector('.market-home-win').textContent = `${(data.market_home_win_prob * 100).toFixed(2)}%`;
+                    document.querySelector('.market-draw').textContent = `${(data.market_draw_prob * 100).toFixed(2)}%`;
+                    document.querySelector('.market-away-win').textContent = `${(data.market_away_win_prob * 100).toFixed(2)}%`;
+                    document.querySelector('.market-trend-text').textContent = data.market_trend;
+                    // 历史赛季融合摘要
+                    const histSummaryEl = document.querySelector('.history-summary-text');
+                    if (histSummaryEl) {
+                        histSummaryEl.textContent = data.history_summary || '（当前不使用历史融合或未找到历史数据）';
+                    }
+
+                    // 让盘合理性与异象展示
+                    const expHcap = (typeof data.expected_handicap === 'number') ? data.expected_handicap : null;
+                    const mktHcap = (typeof data.market_final_handicap === 'number') ? data.market_final_handicap : null;
+                    document.querySelector('.expected-handicap-text').textContent = expHcap !== null ? formatHandicap(expHcap) : '—';
+                    document.querySelector('.market-final-handicap-text').textContent = mktHcap !== null ? formatHandicap(mktHcap) : '—';
+                    document.querySelector('.handicap-water-bias-text').textContent = data.handicap_water_bias || '—';
+                    document.querySelector('.handicap-anomaly-label-text').textContent = data.handicap_anomaly_label || '—';
+                    document.querySelector('.handicap-anomaly-score-text').textContent = (typeof data.handicap_anomaly_score === 'number') ? `${Math.round(data.handicap_anomaly_score * 100)} / 100` : '—';
+
+                    // 各公司隐含概率（终盘）列表
+                    const impliedListEl = document.querySelector('.company-implied-list');
+                    try {
+                        if (Array.isArray(oddsData) && oddsData.length > 0) {
+                            const impliedRows = oddsData.map(o => {
+                                const h = parseFloat(o.final_home_win);
+                                const d = parseFloat(o.final_draw);
+                                const a = parseFloat(o.final_away_win);
+                                const invH = h > 0 ? 1 / h : 0;
+                                const invD = d > 0 ? 1 / d : 0;
+                                const invA = a > 0 ? 1 / a : 0;
+                                const s = invH + invD + invA;
+                                const ph = s > 0 ? invH / s : 0;
+                                const pd = s > 0 ? invD / s : 0;
+                                const pa = s > 0 ? invA / s : 0;
+                                return `<div class="probability-item"><span>${o.company || '—'}</span><span>主胜 ${(ph*100).toFixed(1)}% | 平局 ${(pd*100).toFixed(1)}% | 客胜 ${(pa*100).toFixed(1)}%</span></div>`;
+                            }).join('');
+                            impliedListEl.innerHTML = impliedRows;
+                        } else {
+                            impliedListEl.innerHTML = '<div class="text-muted">（未提供公司赔率数据）</div>';
+                        }
+                    } catch (e) {
+                        console.warn('计算公司隐含概率失败：', e);
+                        impliedListEl.innerHTML = '<div class="text-muted">（计算失败或数据不足）</div>';
+                    }
+                    // 更新融合概率与权重
+                    if (typeof data.fused_home_win_prob === 'number' && typeof data.fused_draw_prob === 'number' && typeof data.fused_away_win_prob === 'number') {
+                        document.querySelector('.fused-home-win').textContent = `${(data.fused_home_win_prob * 100).toFixed(2)}%`;
+                        document.querySelector('.fused-draw').textContent = `${(data.fused_draw_prob * 100).toFixed(2)}%`;
+                        document.querySelector('.fused-away').textContent = `${(data.fused_away_win_prob * 100).toFixed(2)}%`;
+                    } else {
+                        document.querySelector('.fused-home-win').textContent = '—';
+                        document.querySelector('.fused-draw').textContent = '—';
+                        document.querySelector('.fused-away').textContent = '—';
+                    }
+                    if (data.fusion_weights && typeof data.fusion_weights.model === 'number' && typeof data.fusion_weights.market === 'number') {
+                        document.querySelector('.fusion-weights-text').textContent = `模型${data.fusion_weights.model.toFixed(2)}，市场${data.fusion_weights.market.toFixed(2)}`;
+                    } else {
+                        document.querySelector('.fusion-weights-text').textContent = '（未提供权重信息）';
+                    }
+                    document.querySelector('.fusion-notes-text').textContent = data.fusion_notes || '';
+                    renderCharts(data);
+
+                    // 冷门预警
+                    try {
+                        const uTeamEl = document.querySelector('.upset-team-text');
+                        const uProbEl = document.querySelector('.upset-win-prob-text');
+                        const uScoreEl = document.querySelector('.upset-score-text');
+                        const uBadge = document.getElementById('upset-label-badge');
+                        const uNotes = document.getElementById('upset-notes-text');
+                        if (uTeamEl) uTeamEl.textContent = (data.upset_team || '—');
+                        if (uProbEl) {
+                            const p = (typeof data.upset_win_prob === 'number') ? `${(data.upset_win_prob * 100).toFixed(1)}%` : '—';
+                            uProbEl.textContent = p;
+                        }
+                        if (uScoreEl) {
+                            const s = (typeof data.upset_score === 'number') ? `${Math.round(data.upset_score * 100)} / 100` : '—';
+                            uScoreEl.textContent = s;
+                        }
+                        if (uBadge) {
+                            const label = (data.upset_label || '—').toString();
+                            uBadge.textContent = label;
+                            uBadge.classList.remove('bg-success','bg-warning','bg-danger');
+                            const l = label.toLowerCase();
+                            if (l.includes('高')) {
+                                uBadge.classList.add('bg-danger');
+                            } else if (l.includes('中')) {
+                                uBadge.classList.add('bg-warning');
+                            } else if (l.includes('低')) {
+                                uBadge.classList.add('bg-success');
+                            }
+                        }
+                        if (uNotes) uNotes.textContent = (data.upset_notes || '');
+                    } catch (e) {}
+
+                    // 渲染比分概率热力图（自适应）
+                    try {
+                        renderScoreHeatmap(Array.isArray(data.score_matrix) ? data.score_matrix : [], (typeof data.matrix_goals_max === 'number') ? data.matrix_goals_max : 5);
+                    } catch (e) {
+                        console.warn('渲染热力图失败：', e);
+                        document.getElementById('score-heatmap').innerHTML = '<div class="text-muted">（暂无比分矩阵或数据错误）</div>';
+                    }
+
+                    // 校准曲线暂不展示，避免无效接口影响体验
+                    // renderCalibrationCurve();
+                    
+
+
+
+
+
+
+                    // 渲染图表与稳定性分位提示
+                    try {
+                        // 历史统计已移除，避免引用
+                        const stats = {};
+                        const hasChartLib = typeof window.Chart !== 'undefined';
+                        // 历史相关图表容器已移除
+                        const barCanvas = null;
+                        const lineCanvas = null;
+                        const tipEl = null;
+
+                        // 历史 vs 当前终盘概率均值（柱状图）
+                        if (hasChartLib && barCanvas && stats && !stats.error && stats.hist_final_avg && stats.cur_final_avg) {
+                            const labels = ['主胜', '平局', '客胜'];
+                            const histData = [
+                                (stats.hist_final_avg.home || 0) * 100,
+                                (stats.hist_final_avg.draw || 0) * 100,
+                                (stats.hist_final_avg.away || 0) * 100
+                            ];
+                            const curData = [
+                                (stats.cur_final_avg.home || 0) * 100,
+                                (stats.cur_final_avg.draw || 0) * 100,
+                                (stats.cur_final_avg.away || 0) * 100
+                            ];
+                            if (histVsCurChart) histVsCurChart.destroy();
+                            histVsCurChart = new Chart(barCanvas, {
+                                type: 'bar',
+                                data: {
+                                    labels,
+                                    datasets: [
+                                        { label: '历史终盘均值', data: histData, backgroundColor: 'rgba(54, 162, 235, 0.5)' },
+                                        { label: '当前终盘均值', data: curData, backgroundColor: 'rgba(255, 99, 132, 0.5)' }
+                                    ]
+                                },
+                                options: {
+                                    responsive: true,
+                                    scales: {
+                                        y: {
+                                            beginAtZero: true,
+                                            ticks: {
+                                                callback: (v) => `${v}%`
+                                            }
+                                        }
+                                    }
+                                }
+                            });
+                        }
+
+                        // 盘口均值变化（折线图，当前输入的初盘→终盘均值）
+                        if (hasChartLib && lineCanvas && avgInitial !== null && avgFinal !== null) {
+                            if (handicapMeanChart) handicapMeanChart.destroy();
+                            handicapMeanChart = new Chart(lineCanvas, {
+                                type: 'line',
+                                data: {
+                                    labels: ['初盘', '终盘'],
+                                    datasets: [{
+                                        label: '平均让球（主让为正）',
+                                        data: [avgInitial, avgFinal],
+                                        borderColor: 'rgba(75, 192, 192, 1)',
+                                        tension: 0.2
+                                    }]
+                                },
+                                options: {
+                                    responsive: true,
+                                    plugins: {
+                                        tooltip: {
+                                            callbacks: {
+                                                label: (ctx) => ` ${formatHandicap(ctx.parsed.y)}`
+                                            }
+                                        }
+                                    },
+                                    scales: {
+                                        y: {
+                                            ticks: {
+                                                callback: (v) => formatHandicap(v)
+                                            }
+                                        }
+                                    }
+                                }
+                            });
+                        }
+
+                        // 稳定性分位提示（主胜为例）
+                        if (tipEl) {
+                            let tipText = '';
+                            const hp = stats.hist_percentiles || {};
+                            const curF = stats.cur_final_avg || {};
+                            const homeP = hp.home || {};
+                            const curHome = typeof curF.home === 'number' ? curF.home : null;
+                            if (curHome !== null && typeof homeP.p25 === 'number' && typeof homeP.p50 === 'number' && typeof homeP.p75 === 'number') {
+                                if (curHome >= homeP.p75) {
+                                    tipText = `稳定性提示：当前主胜终盘高于历史75分位（${(curHome*100).toFixed(1)}% ≥ ${(homeP.p75*100).toFixed(1)}%）。`;
+                                } else if (curHome <= homeP.p25) {
+                                    tipText = `稳定性提示：当前主胜终盘低于历史25分位（${(curHome*100).toFixed(1)}% ≤ ${(homeP.p25*100).toFixed(1)}%）。`;
+                                } else {
+                                    tipText = `稳定性提示：当前主胜终盘接近历史中位（${(homeP.p50*100).toFixed(1)}%）。`;
+                                }
+                            } else {
+                                tipText = '稳定性提示：历史分位统计不足或未启用。';
+                            }
+                            tipEl.textContent = tipText;
+                        }
+                    } catch (e) {
+                        console.warn('图表渲染失败或数据不足：', e);
+                    }
+
+                    // 更新AI分析报告（文本 + 结构化 + JSON切换）
+                    document.querySelector('.ai-analysis').textContent = data.analysis || '（AI分析不可用或未启用）';
+                    window._analysisStruct = data.analysis_struct || null;
+                    renderStructuredAnalysis(window._analysisStruct);
+                    if (window._analysisStruct) {
+                        setAnalysisMode('structured');
+                    } else {
+                        setAnalysisMode('text');
+                    }
+                    const srcLabel = document.getElementById('ai-source-label');
+                    if (srcLabel) {
+                        const src = data.analysis_source;
+                        if (src === 'deepseek') {
+                            srcLabel.textContent = 'AI来源：DeepSeek';
+                            srcLabel.className = 'small text-success';
+                        } else {
+                            srcLabel.textContent = 'AI来源：本地基础分析（未启用外部AI，需配置 DEEPSEEK_API_KEY）';
+                            srcLabel.className = 'small text-muted';
+                        }
+                    }
+                }, 500);
+
+            } catch (error) {
+                console.error('Error:', error);
+                if (error && error.name === 'AbortError') {
+                    const progressDiv = document.getElementById('progress-div');
+                    progressDiv.style.display = 'none';
+                    return; // 用户取消，无需提示
+                }
+                alert('提交数据时发生错误，请检查输入并重试。');
+            }
+        }
+
+        // —— 结构化分析渲染与切换 ——
+        function renderStructuredAnalysis(struct) {
+            const el = document.querySelector('.analysis-structured');
+            if (!el) return;
+            if (!struct || !struct.sections || !Array.isArray(struct.sections)) {
+                el.innerHTML = '<div class="text-muted">（结构化分析不可用）</div>';
+                return;
+            }
+            const parts = [];
+            if (struct.summary) {
+                try {
+                    const dist = struct.summary.distribution || {};
+                    const top = Array.isArray(struct.summary.top_scores) ? struct.summary.top_scores : [];
+                    parts.push(`<div class="mb-2"><strong>摘要：</strong>主胜${dist.home ?? '—'}%，平局${dist.draw ?? '—'}%，客胜${dist.away ?? '—'}%（${dist.source || 'model'}）。`);
+                    if (top.length) {
+                        parts.push(`<div class="text-muted">前3个可能比分：${top.map(x=>`${x.score}(${x.prob ?? '—'}%)`).join(', ')}</div>`);
+                    }
+                    parts.push(`</div>`);
+                } catch (e) {}
+            }
+            struct.sections.forEach(section => {
+                parts.push(`<details open class="mb-3"><summary class="fw-semibold">${section.title || '（未命名分区）'}</summary>`);
+                if (Array.isArray(section.items)) {
+                    section.items.forEach(item => {
+                        const t = (item.type || '').toLowerCase();
+                        const text = item.text || '';
+                        if (t === 'bullet') {
+                            parts.push(`<div class="d-flex align-items-start gap-2"><span>•</span><span>${text}</span></div>`);
+                        } else if (t === 'metric') {
+                            const meta = item.meta ? JSON.stringify(item.meta, null, 2) : '';
+                            parts.push(`<div class="mt-1"><div class="small text-muted">${text || '指标'}</div><pre class="bg-light p-2 rounded border">${meta}</pre></div>`);
+                        } else {
+                            parts.push(`<p class="mb-1">${text}</p>`);
+                        }
+                    });
+                }
+                parts.push(`</details>`);
+            });
+            el.innerHTML = parts.join('');
+        }
+
+        function setAnalysisMode(mode) {
+            const preText = document.querySelector('.ai-analysis');
+            const structEl = document.querySelector('.analysis-structured');
+            const jsonEl = document.querySelector('.analysis-json');
+            const btnText = document.getElementById('toggle-text');
+            const btnStruct = document.getElementById('toggle-structured');
+            const btnJson = document.getElementById('toggle-json');
+            const setActive = (btn, active) => {
+                if (!btn) return;
+                btn.classList.toggle('btn-primary', active);
+                btn.classList.toggle('btn-outline-primary', !active && (btn === btnText || btn === btnStruct));
+                btn.classList.toggle('btn-outline-secondary', !active && btn === btnJson);
+            };
+            if (mode === 'structured') {
+                preText.style.display = 'none';
+                structEl.style.display = 'block';
+                jsonEl.style.display = 'none';
+                setActive(btnText, false); setActive(btnStruct, true); setActive(btnJson, false);
+            } else if (mode === 'json') {
+                preText.style.display = 'none';
+                structEl.style.display = 'none';
+                jsonEl.style.display = 'block';
+                jsonEl.textContent = JSON.stringify(window._analysisStruct || {}, null, 2);
+                setActive(btnText, false); setActive(btnStruct, false); setActive(btnJson, true);
+            } else {
+                preText.style.display = 'block';
+                structEl.style.display = 'none';
+                jsonEl.style.display = 'none';
+                setActive(btnText, true); setActive(btnStruct, false); setActive(btnJson, false);
+            }
+        }
+
+        function initAnalysisToggle() {
+            const bText = document.getElementById('toggle-text');
+            const bStruct = document.getElementById('toggle-structured');
+            const bJson = document.getElementById('toggle-json');
+            if (bText) bText.addEventListener('click', () => setAnalysisMode('text'));
+            if (bStruct) bStruct.addEventListener('click', () => setAnalysisMode('structured'));
+            if (bJson) bJson.addEventListener('click', () => setAnalysisMode('json'));
+        }
+
+        // 初始化切换按钮
+        window.addEventListener('DOMContentLoaded', () => { initAnalysisToggle(); });
+
+        // —— 阵容（可选）功能 ——
+        function fillRosterTeamFrom(side) {
+            try {
+                const nameEl = document.getElementById(side === 'home' ? 'home-team-name' : 'away-team-name');
+                const rosterTeamEl = document.getElementById('roster-team');
+                if (nameEl && rosterTeamEl) {
+                    const v = (nameEl.value || '').trim();
+                    if (v) rosterTeamEl.value = v;
+                }
+            } catch (e) { /* ignore */ }
+        }
+
+        function renderRosterTable(items) {
+            const container = document.getElementById('roster-table');
+            if (!container) return;
+            if (!Array.isArray(items) || items.length === 0) {
+                container.style.display = 'none';
+                container.innerHTML = '<div class="text-muted">（暂无阵容数据或查询条件不正确）</div>';
+                return;
+            }
+            const headers = [
+                '球员','位置','号码','年龄','出场','首发','分钟','进球','助攻','黄牌','红牌','伤病','停赛','评分','身价','备注'
+            ];
+            const thead = '<thead><tr>' + headers.map(h => `<th>${h}</th>`).join('') + '</tr></thead>';
+            const tbody = '<tbody>' + items.map(r => {
+                const yn = (v) => (String(v) === '1' || v === 1 || String(v).toLowerCase() === 'true') ? '是' : '否';
+                return `<tr>
+                    <td>${r.player_name ?? ''}</td>
+                    <td>${r.position ?? ''}</td>
+                    <td>${r.jersey_number ?? ''}</td>
+                    <td>${r.age ?? ''}</td>
+                    <td>${r.appearances ?? ''}</td>
+                    <td>${r.starts ?? ''}</td>
+                    <td>${r.minutes ?? ''}</td>
+                    <td>${r.goals ?? ''}</td>
+                    <td>${r.assists ?? ''}</td>
+                    <td>${r.yellow_cards ?? ''}</td>
+                    <td>${r.red_cards ?? ''}</td>
+                    <td>${yn(r.injured)}</td>
+                    <td>${yn(r.suspended)}</td>
+                    <td>${typeof r.rating === 'number' ? r.rating.toFixed(2) : (r.rating ?? '')}</td>
+                    <td>${typeof r.market_value === 'number' ? r.market_value.toFixed(2) : (r.market_value ?? '')}</td>
+                    <td>${r.notes ?? ''}</td>
+                </tr>`;
+            }).join('') + '</tbody>';
+            container.innerHTML = `<table class="table table-sm table-striped">${thead}${tbody}</table>`;
+            container.style.display = '';
+        }
+
+        async function uploadRoster() {
+            try {
+                const team = (document.getElementById('roster-team')?.value || '').trim();
+                const season = (document.getElementById('roster-season')?.value || '').trim();
+                const fileInput = document.getElementById('roster-file');
+                const resultEl = document.getElementById('roster-result');
+                resultEl.textContent = '';
+                if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+                    alert('请选择要上传的阵容文件');
+                    return;
+                }
+                if (!team || !season) {
+                    const ok = confirm('未填写球队或赛季可能导致导入失败。继续尝试按文件列导入？');
+                    if (!ok) return;
+                }
+                const file = fileInput.files[0];
+                const fd = new FormData();
+                fd.append('file', file);
+                const base = await getApiBase();
+                const params = new URLSearchParams();
+                if (team) params.append('team', team);
+                if (season) params.append('season', season);
+                const resp = await fetch(base + '/api/admin/roster/import' + (params.toString() ? ('?' + params.toString()) : ''), { method: 'POST', body: fd });
+                if (!resp.ok) throw new Error('阵容导入接口调用失败');
+                const data = await resp.json();
+                const stats = data.stats || {};
+                resultEl.innerHTML = `<div class="alert alert-success">导入完成：新增 ${Number(stats.inserted||0)} 条，更新 ${Number(stats.updated||0)} 条，跳过 ${Number(stats.skipped||0)} 条。</div>`;
+            } catch (e) {
+                console.error('阵容导入失败', e);
+                alert('导入阵容过程中发生错误，请检查文件格式与必填列（球员/球队/赛季）。');
+            }
+        }
+
+        async function queryRoster() {
+            try {
+                const teamEl = document.getElementById('roster-team');
+                const seasonEl = document.getElementById('roster-season');
+                let team = (teamEl?.value || '').trim();
+                const season = (seasonEl?.value || '').trim();
+                if (!team) {
+                    const home = (document.getElementById('home-team-name')?.value || '').trim();
+                    if (home) team = home;
+                }
+                if (!team || !season) {
+                    alert('请填写球队名称与赛季后再查询');
+                    return;
+                }
+                const base = await getApiBase();
+                const params = new URLSearchParams({ team, season });
+                const resp = await fetch(base + '/api/roster?' + params.toString());
+                if (!resp.ok) throw new Error('阵容查询失败');
+                const data = await resp.json();
+                renderRosterTable(Array.isArray(data.items) ? data.items : []);
+            } catch (e) {
+                console.error('查询阵容失败', e);
+                alert('查询阵容失败，请确认球队与赛季是否存在。');
+            }
+        }
+
+        // 公司下拉同步：默认选项与后端动态加载
+        let COMPANY_OPTIONS = ["365", "皇冠（crown）", "澳门", "易胜博"];
+
+        function populateCompanySelect(selectElement) {
+            selectElement.innerHTML = '';
+            COMPANY_OPTIONS.forEach(name => {
+                const opt = document.createElement('option');
+                opt.value = name;
+                opt.textContent = name;
+                selectElement.appendChild(opt);
+            });
+        }
+
+        async function loadCompanyOptions() {
+            try {
+                const base = await getApiBase();
+                const resp = await fetch(base + '/api/companies');
+                const data = await resp.json();
+                if (data && Array.isArray(data.companies) && data.companies.length > 0) {
+                    COMPANY_OPTIONS = data.companies;
+                }
+            } catch (e) {
+                console.warn('加载公司列表失败，使用默认选项', e);
+            }
+            // 更新现有所有行的公司下拉
+            document.querySelectorAll('.company-name').forEach(populateCompanySelect);
+        }
+
+        // 页面加载时：先同步公司列表，再添加默认赔率行
+        document.addEventListener('DOMContentLoaded', () => {
+            loadCompanyOptions().then(() => addOddsRow()).catch(() => addOddsRow());
+        });
+
+        // 加载模拟数据
+        async function loadMockData() {
+            try {
+                const base = await getApiBase();
+                const response = await fetch(base + '/api/mock-data');
+                const ct = response.headers.get('content-type') || '';
+                if (!ct.includes('application/json')) {
+                    const text = await response.text();
+                    throw new Error(`Mock data not JSON (${ct}): ${text.slice(0, 60)}`);
+                }
+                const mockData = await response.json();
+
+                // 随机选择一组模拟数据
+                const randomData = mockData[Math.floor(Math.random() * mockData.length)];
+                // 便捷：安全写入（字段存在且可用才赋值）
+                const setOpt = (id, v) => {
+                    const el = document.getElementById(id);
+                    if (!el) return;
+                    if (v === null || v === undefined || (typeof v === 'number' && Number.isNaN(v))) return;
+                    el.value = typeof v === 'number' ? v : String(v);
+                };
+
+                // —— 新增：若该组仅包含少量公司，自动生成补全为至少3家 ——
+                try {
+                    const desiredCount = 3; // 目标至少3家公司
+                    const usedNames = new Set((randomData.odds_data || []).map(o => String(o.company)));
+                    const base = (randomData.odds_data && randomData.odds_data[0]) || null;
+
+                    const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
+                    const perturb = (n, ratio = 0.06) => {
+                        const delta = (Math.random() * 2 - 1) * ratio; // ±ratio 波动
+                        return n * (1 + delta);
+                    };
+                    const pickCompanyName = (idx) => {
+                        const candidates = COMPANY_OPTIONS.filter(name => !usedNames.has(name));
+                        if (candidates.length > 0) {
+                            const name = candidates[idx % candidates.length];
+                            usedNames.add(name);
+                            return name;
+                        }
+                        const fallback = `虚拟公司${String.fromCharCode(65 + (idx % 6))}`; // 虚拟公司A/B/C...
+                        usedNames.add(fallback);
+                        return fallback;
+                    };
+                    const pickHandicapLike = (val, drift = 0) => {
+                        const nums = extractNumbers(val);
+                        const baseVal = nums.length ? nums.reduce((a,b)=>a+b,0) / nums.length : 0;
+                        const target = baseVal + drift;
+                        // 拟合到最近的标准盘口选项
+                        const nearest = handicapOptions.reduce((best, cur) => (
+                            Math.abs(cur - target) < Math.abs(best - target) ? cur : best
+                        ), handicapOptions[0]);
+                        return nearest;
+                    };
+
+                    if (base && (randomData.odds_data || []).length < desiredCount) {
+                        const synthCount = desiredCount - randomData.odds_data.length;
+                        for (let i = 0; i < synthCount; i++) {
+                            const name = pickCompanyName(i);
+                            const initHcap = pickHandicapLike(base.initial_handicap, (Math.random() - 0.5) * 0.5);
+                            const finalHcap = pickHandicapLike(base.final_handicap, (Math.random() - 0.5) * 0.5);
+                            const newOdds = {
+                                company: name,
+                                initial_home_win: clamp(perturb(base.initial_home_win), 1.05, 15.0),
+                                initial_draw: clamp(perturb(base.initial_draw), 2.20, 15.0),
+                                initial_away_win: clamp(perturb(base.initial_away_win), 1.20, 20.0),
+                                final_home_win: clamp(perturb(base.final_home_win), 1.05, 15.0),
+                                final_draw: clamp(perturb(base.final_draw), 2.20, 15.0),
+                                final_away_win: clamp(perturb(base.final_away_win), 1.20, 20.0),
+                                // 使用标准数值盘口，便于前端下拉匹配与后端解析
+                                initial_handicap: String(initHcap),
+                                final_handicap: String(finalHcap),
+                                initial_handicap_home_odds: clamp(perturb(base.initial_handicap_home_odds, 0.04), 1.50, 2.50),
+                                initial_handicap_away_odds: clamp(perturb(base.initial_handicap_away_odds, 0.04), 1.50, 2.50),
+                                final_handicap_home_odds: clamp(perturb(base.final_handicap_home_odds, 0.04), 1.50, 2.50),
+                                final_handicap_away_odds: clamp(perturb(base.final_handicap_away_odds, 0.04), 1.50, 2.50),
+                            };
+                            randomData.odds_data.push(newOdds);
+                        }
+                    }
+                } catch (e) {
+                    console.warn('补全多公司模拟数据失败（忽略继续）:', e);
+                }
+
+                // 填充主队数据
+                document.getElementById('home-team-name').value = randomData.home_team.name;
+                document.getElementById('home-team-ranking').value = randomData.home_team.ranking;
+                document.getElementById('home-games-played').value = randomData.home_team.games_played;
+                document.getElementById('home-xg').value = randomData.home_team.xg;
+                document.getElementById('home-xga').value = randomData.home_team.xga;
+                document.getElementById('home-xpts').value = randomData.home_team.xpts;
+                document.getElementById('home-season-goals-for').value = randomData.home_team.goals_for;
+                document.getElementById('home-season-goals-against').value = randomData.home_team.goals_against;
+                // 可选扩展指标
+                setOpt('home-wins', randomData.home_team.wins);
+                setOpt('home-draws', randomData.home_team.draws);
+                setOpt('home-losses', randomData.home_team.losses);
+                setOpt('home-points', randomData.home_team.points);
+                setOpt('home-xpxgd', randomData.home_team.xpxgd);
+
+                // 填充客队数据
+                document.getElementById('away-team-name').value = randomData.away_team.name;
+                document.getElementById('away-team-ranking').value = randomData.away_team.ranking;
+                document.getElementById('away-games-played').value = randomData.away_team.games_played;
+                document.getElementById('away-xg').value = randomData.away_team.xg;
+                document.getElementById('away-xga').value = randomData.away_team.xga;
+                document.getElementById('away-xpts').value = randomData.away_team.xpts;
+                document.getElementById('away-season-goals-for').value = randomData.away_team.goals_for;
+                document.getElementById('away-season-goals-against').value = randomData.away_team.goals_against;
+                // 可选扩展指标
+                setOpt('away-wins', randomData.away_team.wins);
+                setOpt('away-draws', randomData.away_team.draws);
+                setOpt('away-losses', randomData.away_team.losses);
+                setOpt('away-points', randomData.away_team.points);
+                setOpt('away-xpxgd', randomData.away_team.xpxgd);
+
+                // 填充赔率数据
+                const oddsContainer = document.getElementById('odds-container');
+                oddsContainer.innerHTML = ''; // 清空现有的赔率行
+                randomData.odds_data.forEach(odds => {
+                    addOddsRow();
+                    const newRow = oddsContainer.lastElementChild;
+                    // 若模拟数据公司不在下拉中，动态追加
+                    const companySelect = newRow.querySelector('.company-name');
+                    if (![...companySelect.options].some(opt => opt.value === String(odds.company))) {
+                        const opt = document.createElement('option');
+                        opt.value = String(odds.company);
+                        opt.textContent = String(odds.company);
+                        companySelect.appendChild(opt);
+                    }
+                    companySelect.value = String(odds.company);
+                    newRow.querySelector('.initial-home-win').value = Number(odds.initial_home_win).toFixed(2);
+                    newRow.querySelector('.initial-draw').value = Number(odds.initial_draw).toFixed(2);
+                    newRow.querySelector('.initial-away-win').value = Number(odds.initial_away_win).toFixed(2);
+                    newRow.querySelector('.final-home-win').value = Number(odds.final_home_win).toFixed(2);
+                    newRow.querySelector('.final-draw').value = Number(odds.final_draw).toFixed(2);
+                    newRow.querySelector('.final-away-win').value = Number(odds.final_away_win).toFixed(2);
+                    // 解析中文或数值盘口为标准选项值
+                    const initNums = extractNumbers(odds.initial_handicap);
+                    const finalNums = extractNumbers(odds.final_handicap);
+                    if (initNums.length > 0) {
+                        const initAvg = initNums.length > 1 ? (initNums.reduce((a,b)=>a+b,0) / initNums.length) : initNums[0];
+                        newRow.querySelector('.initial-handicap').value = (initAvg > 0 ? ('+' + initAvg.toFixed(2)) : initAvg.toFixed(2));
+                    } else {
+                        newRow.querySelector('.initial-handicap').value = (function(h){ h=String(h); const x=parseFloat(h); return (!Number.isNaN(x) && x>0 && !h.trim().startsWith('+')) ? ('+'+x.toFixed(2)) : h; })(odds.initial_handicap);
+                    }
+                    if (finalNums.length > 0) {
+                        const finalAvg = finalNums.length > 1 ? (finalNums.reduce((a,b)=>a+b,0) / finalNums.length) : finalNums[0];
+                        newRow.querySelector('.final-handicap').value = (finalAvg > 0 ? ('+' + finalAvg.toFixed(2)) : finalAvg.toFixed(2));
+                    } else {
+                        newRow.querySelector('.final-handicap').value = (function(h){ h=String(h); const x=parseFloat(h); return (!Number.isNaN(x) && x>0 && !h.trim().startsWith('+')) ? ('+'+x.toFixed(2)) : h; })(odds.final_handicap);
+                    }
+                    newRow.querySelector('.initial-handicap-home-odds').value = Number(odds.initial_handicap_home_odds).toFixed(2);
+                    newRow.querySelector('.initial-handicap-away-odds').value = Number(odds.initial_handicap_away_odds).toFixed(2);
+                    newRow.querySelector('.final-handicap-home-odds').value = Number(odds.final_handicap_home_odds).toFixed(2);
+                    newRow.querySelector('.final-handicap-away-odds').value = Number(odds.final_handicap_away_odds).toFixed(2);
+                });
+
+            } catch (error) {
+                console.error('Error loading mock data:', error);
+                alert('加载模拟数据失败，请确保后端服务正在运行。');
+            }
+        }
+
+        // 比分概率热力图（自适应矩阵）渲染（含坐标轴）
+        function renderScoreHeatmap(matrix, maxGoals) {
+            const container = document.getElementById('score-heatmap');
+            if (!container) return;
+            try {
+                if (!Array.isArray(matrix) || matrix.length === 0 || !Array.isArray(matrix[0])) {
+                    container.innerHTML = '<div class="text-muted">（暂无比分矩阵或数据错误）</div>';
+                    return;
+                }
+                const rows = matrix.length;
+                const cols = Array.isArray(matrix[0]) ? matrix[0].length : (typeof maxGoals === 'number' ? (maxGoals + 1) : rows);
+                const cellSize = 26;
+                const axisSize = 26;
+                let maxVal = 0;
+                let sumVal = 0;
+                for (let i = 0; i < rows; i++) {
+                    for (let j = 0; j < cols; j++) {
+                        const v = Number(matrix[i][j] || 0);
+                        if (v > maxVal) maxVal = v;
+                        sumVal += v;
+                    }
+                }
+                container.innerHTML = '';
+                // 顶部列标签（客队进球数 0..N）
+                const header = document.createElement('div');
+                header.className = 'heatmap-header';
+                header.style.display = 'grid';
+                header.style.gridTemplateColumns = `${axisSize}px repeat(${cols}, ${cellSize}px)`;
+                const corner = document.createElement('div');
+                corner.className = 'axis-cell';
+                corner.style.width = `${axisSize}px`;
+                corner.style.height = `${cellSize}px`;
+                corner.style.display = 'flex';
+                corner.style.alignItems = 'center';
+                corner.style.justifyContent = 'center';
+                corner.style.border = '1px solid #eee';
+                corner.style.background = '#f8f8f8';
+                corner.style.color = '#666';
+                corner.title = '纵轴：主队进球数';
+                header.appendChild(corner);
+                for (let j = 0; j < cols; j++) {
+                    const lab = document.createElement('div');
+                    lab.className = 'axis-cell';
+                    lab.style.width = `${cellSize}px`;
+                    lab.style.height = `${cellSize}px`;
+                    lab.style.display = 'flex';
+                    lab.style.alignItems = 'center';
+                    lab.style.justifyContent = 'center';
+                    lab.style.border = '1px solid #eee';
+                    lab.style.background = '#f8f8f8';
+                    lab.style.color = '#666';
+                    lab.textContent = String(j);
+                    lab.title = `客队进球数 ${j}`;
+                    header.appendChild(lab);
+                }
+                container.appendChild(header);
+                // 主体矩阵行（每行左侧显示主队进球数 i）
+                for (let i = 0; i < rows; i++) {
+                    const rowDiv = document.createElement('div');
+                    rowDiv.className = 'heatmap-row';
+                    rowDiv.style.display = 'grid';
+                    rowDiv.style.gridTemplateColumns = `${axisSize}px repeat(${cols}, ${cellSize}px)`;
+                    const rowLab = document.createElement('div');
+                    rowLab.className = 'axis-cell';
+                    rowLab.style.width = `${axisSize}px`;
+                    rowLab.style.height = `${cellSize}px`;
+                    rowLab.style.display = 'flex';
+                    rowLab.style.alignItems = 'center';
+                    rowLab.style.justifyContent = 'center';
+                    rowLab.style.border = '1px solid #eee';
+                    rowLab.style.background = '#f8f8f8';
+                    rowLab.style.color = '#666';
+                    rowLab.textContent = String(i);
+                    rowLab.title = `主队进球数 ${i}`;
+                    rowDiv.appendChild(rowLab);
+                    for (let j = 0; j < cols; j++) {
+                        const p = Number(matrix[i][j] || 0);
+                        const ratio = maxVal > 0 ? (p / maxVal) : 0;
+                        const light = 95 - Math.round(ratio * 70);
+                        const cell = document.createElement('div');
+                        cell.className = 'heat-cell';
+                        cell.style.width = `${cellSize}px`;
+                        cell.style.height = `${cellSize}px`;
+                        cell.style.backgroundColor = `hsl(210, 85%, ${light}%)`;
+                        cell.style.border = '1px solid #eee';
+                        cell.style.display = 'flex';
+                        cell.style.alignItems = 'center';
+                        cell.style.justifyContent = 'center';
+                        cell.style.fontSize = '10px';
+                        cell.style.color = light < 60 ? '#fff' : '#333';
+                        cell.title = `${i}-${j} : ${(p * 100).toFixed(1)}%`;
+                        cell.textContent = `${(p * 100).toFixed(0)}%`;
+                        rowDiv.appendChild(cell);
+                    }
+                    container.appendChild(rowDiv);
+                }
+                const missing = Math.max(0, 1 - sumVal);
+                const legend = container.nextElementSibling;
+                if (legend && legend.classList && legend.classList.contains('heat-legend')) {
+                    const note = `矩阵覆盖质量 ${(sumVal * 100).toFixed(1)}%，尾部未覆盖 ${(missing * 100).toFixed(1)}%`;
+                    legend.innerHTML = `坐标轴：横轴为客队进球数（0..${cols - 1}），纵轴为主队进球数（0..${rows - 1}）；深色表示更高概率。<br>${note}`;
+                }
+            } catch (e) {
+                console.warn('渲染比分热力图失败：', e);
+                container.innerHTML = '<div class="text-muted">（渲染失败，稍后重试）</div>';
+            }
+        }
+
+        // 校准曲线与回测提示渲染
+        async function renderCalibrationCurve() {
+            const canvas = document.getElementById('calibration-curve');
+            const summaryEl = document.getElementById('backtest-summary');
+            const tipsEl = document.getElementById('backtest-tips');
+            if (!canvas) return;
+            try {
+                const base = await getApiBase();
+                const resp = await fetch(base + '/api/backtest/summary');
+                if (!resp.ok) throw new Error('网络错误');
+                const data = await resp.json();
+                const samples = Number(data.samples || 0);
+                if (samples === 0) {
+                    if (summaryEl) summaryEl.textContent = '暂无已录入赛果数据，校准曲线与回测提示待数据积累。';
+                    if (calibrationChart) { calibrationChart.destroy(); calibrationChart = null; }
+                    return;
+                }
+                const reliability = Array.isArray(data.reliability) ? data.reliability.filter(r => r.mean_prob != null && r.accuracy != null) : [];
+                const points = reliability.map(r => ({ x: Number(r.mean_prob), y: Number(r.accuracy) }));
+                if (calibrationChart) calibrationChart.destroy();
+                calibrationChart = new Chart(canvas, {
+                    type: 'scatter',
+                    data: {
+                        datasets: [
+                            { label: '模型校准', data: points, backgroundColor: 'rgba(54, 162, 235, 0.85)' },
+                            { label: '理想线 y=x', data: [{ x: 0, y: 0 }, { x: 1, y: 1 }], type: 'line', borderColor: '#888', borderDash: [6, 4], pointRadius: 0 }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: { min: 0, max: 1, ticks: { callback: v => `${(v * 100).toFixed(0)}%` }, title: { display: true, text: '预测概率(峰值)' } },
+                            y: { min: 0, max: 1, ticks: { callback: v => `${(v * 100).toFixed(0)}%` }, title: { display: true, text: '实际命中率' } }
+                        },
+                        plugins: {
+                            legend: { position: 'bottom' },
+                            tooltip: {
+                                callbacks: {
+                                    label: ctx => `p=${(ctx.raw.x * 100).toFixed(1)}%，命中=${(ctx.raw.y * 100).toFixed(1)}%`
+                                }
+                            }
+                        }
+                    }
+                });
+                const acc = typeof data.accuracy === 'number' ? `${(data.accuracy * 100).toFixed(1)}%` : '—';
+                const ece = typeof data.ece === 'number' ? Number(data.ece).toFixed(3) : '—';
+                const brier = typeof data.avg_brier === 'number' ? Number(data.avg_brier).toFixed(3) : '—';
+                const logloss = typeof data.avg_logloss === 'number' ? Number(data.avg_logloss).toFixed(3) : '—';
+                if (summaryEl) summaryEl.innerHTML = `样本数 ${samples}；准确率 ${acc}；平均Brier ${brier}；平均LogLoss ${logloss}；ECE ${ece}`;
+                let tipMsg = '';
+                if (typeof data.ece === 'number' && data.ece > 0.05) tipMsg += '校准偏差偏大：建议加强后置校准或引入可靠性约束。';
+                const overconfBins = reliability.filter(r => (Number(r.mean_prob) - Number(r.accuracy)) > 0.05);
+                if (overconfBins.length >= 2) tipMsg += (tipMsg ? ' ' : '') + '存在过度自信分段：降低模型权重或校正概率峰值。';
+                if (tipsEl) tipsEl.textContent = tipMsg || '模型校准总体平衡；可持续积累样本以提升稳健性。';
+            } catch (e) {
+                console.warn('加载回测摘要失败：', e);
+                if (summaryEl) summaryEl.textContent = '回测摘要加载失败，请稍后重试。';
+            }
+        }
+
+        // 管理员录入：球队赛季统计
+        async function submitTeamSeasonStats() {
+            try {
+                const team = document.getElementById('team-input').value.trim();
+                const season = document.getElementById('season-input').value.trim();
+                const xg = parseFloat(document.getElementById('xg-input').value);
+                const xga = parseFloat(document.getElementById('xga-input').value);
+                const xpts = parseFloat(document.getElementById('xpts-input').value);
+                const notes = document.getElementById('team-notes-input').value.trim();
+                if (!team || !season) { alert('请填写球队与赛季'); return; }
+                const payload = {
+                    team,
+                    season,
+                    xg: isNaN(xg) ? 0 : xg,
+                    xga: isNaN(xga) ? 0 : xga,
+                    xpts: isNaN(xpts) ? 0 : xpts,
+                    notes: notes || null
+                };
+                const base = await getApiBase();
+                const resp = await fetch(base + '/api/admin/teams', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!resp.ok) {
+                    const err = await resp.json().catch(() => ({}));
+                    throw new Error(err.detail || '保存失败');
+                }
+                const data = await resp.json();
+                alert(`保存成功：${team} ${season} (ID=${data.id ?? '—'})`);
+            } catch (e) {
+                alert(`保存失败：${e.message || e}`);
+            }
+        }
+
+        // 赛季统计查询与展示
+        async function loadTeamSeasonStats() {
+            try {
+                const team = (document.getElementById('query-team')?.value || '').trim();
+                const season = (document.getElementById('query-season')?.value || '').trim();
+                const league = (document.getElementById('query-league')?.value || '').trim();
+                const limitRaw = document.getElementById('query-limit')?.value;
+                const offsetRaw = document.getElementById('query-offset')?.value;
+                const limit = isNaN(parseInt(limitRaw)) ? 50 : parseInt(limitRaw);
+                const offset = isNaN(parseInt(offsetRaw)) ? 0 : parseInt(offsetRaw);
+                const params = new URLSearchParams();
+                if (team) params.set('team', team);
+                if (season) params.set('season', season);
+                if (league) params.set('league', league);
+                params.set('limit', String(limit));
+                params.set('offset', String(offset));
+                const base = await getApiBase();
+                const resp = await fetch(base + '/api/admin/teams?' + params.toString());
+                if (!resp.ok) throw new Error('查询失败');
+                const data = await resp.json();
+                const items = Array.isArray(data.items) ? data.items : [];
+                renderTeamSeasonStats(items);
+            } catch (e) {
+                alert(`查询失败：${e.message || e}`);
+            }
+        }
+        function renderTeamSeasonStats(items) {
+            const tbody = document.querySelector('#team-stats-table tbody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            const cntEl = document.getElementById('team-stats-count');
+            if (cntEl) cntEl.textContent = `共 ${items.length} 条`;
+            const fmt = x => (typeof x === 'number' && isFinite(x)) ? Number(x).toFixed(2) : '';
+            items.forEach(it => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${it.id ?? ''}</td>
+                    <td>${it.team ?? ''}</td>
+                    <td>${it.season ?? ''}</td>
+                    <td>${it.league ?? ''}</td>
+                    <td>${fmt(it.xg)}</td>
+                    <td>${fmt(it.xga)}</td>
+                    <td>${fmt(it.xpts)}</td>
+                    <td>${it.notes ?? ''}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // 管理员录入：比赛记录
+        async function submitManualMatch() {
+            try {
+                const date = document.getElementById('match-date').value || null;
+                const league = (document.getElementById('match-league').value || '').trim() || null;
+                const season = (document.getElementById('match-season').value || '').trim() || null;
+                const home_team = (document.getElementById('match-home-team').value || '').trim();
+                const away_team = (document.getElementById('match-away-team').value || '').trim();
+                const home_goals_raw = document.getElementById('match-home-goals').value;
+                const away_goals_raw = document.getElementById('match-away-goals').value;
+                const home_xg_raw = document.getElementById('match-home-xg')?.value;
+                const away_xg_raw = document.getElementById('match-away-xg')?.value;
+                const round = (document.getElementById('match-round')?.value || '').trim() || null;
+                const home_ranking_raw = document.getElementById('match-home-ranking')?.value;
+                const away_ranking_raw = document.getElementById('match-away-ranking')?.value;
+                const half_home_goals_raw = document.getElementById('match-half-home-goals')?.value;
+                const half_away_goals_raw = document.getElementById('match-half-away-goals')?.value;
+                const notes = (document.getElementById('match-notes')?.value || '').trim() || null;
+                if (!home_team || !away_team) { alert('请填写主队与客队'); return; }
+                const toIntOrNull = v => (v === '' || v === null || v === undefined) ? null : (isNaN(parseInt(v)) ? null : parseInt(v));
+                const toFloatOrNull = v => (v === '' || v === null || v === undefined) ? null : (isNaN(parseFloat(v)) ? null : parseFloat(v));
+
+                // 收集公司赔率（历史录入容器）
+                const oddsDataRaw = [];
+                document.querySelectorAll('#odds-admin-container .odds-row').forEach(row => {
+                    const entry = {
+                        company: row.querySelector('.company-name').value,
+                        initial_home_win: parseFloat(row.querySelector('.initial-home-win').value),
+                        initial_draw: parseFloat(row.querySelector('.initial-draw').value),
+                        initial_away_win: parseFloat(row.querySelector('.initial-away-win').value),
+                        final_home_win: parseFloat(row.querySelector('.final-home-win').value),
+                        final_draw: parseFloat(row.querySelector('.final-draw').value),
+                        final_away_win: parseFloat(row.querySelector('.final-away-win').value),
+                        initial_handicap: row.querySelector('.initial-handicap').value,
+                        final_handicap: row.querySelector('.final-handicap').value,
+                        initial_handicap_home_odds: parseFloat(row.querySelector('.initial-handicap-home-odds').value),
+                        initial_handicap_away_odds: parseFloat(row.querySelector('.initial-handicap-away-odds').value),
+                        final_handicap_home_odds: parseFloat(row.querySelector('.final-handicap-home-odds').value),
+                        final_handicap_away_odds: parseFloat(row.querySelector('.final-handicap-away-odds').value)
+                    };
+                    oddsDataRaw.push(entry);
+                });
+                const oddsData = oddsDataRaw.filter(entry => {
+                    const nums = [
+                        entry.initial_home_win, entry.initial_draw, entry.initial_away_win,
+                        entry.final_home_win, entry.final_draw, entry.final_away_win,
+                        entry.initial_handicap_home_odds, entry.initial_handicap_away_odds,
+                        entry.final_handicap_home_odds, entry.final_handicap_away_odds
+                    ];
+                    const strsOk = entry.company && entry.initial_handicap && entry.final_handicap;
+                    const numsOk = nums.every(v => Number.isFinite(v));
+                    return strsOk && numsOk;
+                });
+
+                const payload = {
+                    date,
+                    league,
+                    season,
+                    home_team,
+                    away_team,
+                    home_goals: toIntOrNull(home_goals_raw),
+                    away_goals: toIntOrNull(away_goals_raw),
+                    home_xg: toFloatOrNull(home_xg_raw),
+                    away_xg: toFloatOrNull(away_xg_raw),
+                    round,
+                    home_ranking: toIntOrNull(home_ranking_raw),
+                    away_ranking: toIntOrNull(away_ranking_raw),
+                    half_home_goals: toIntOrNull(half_home_goals_raw),
+                    half_away_goals: toIntOrNull(half_away_goals_raw),
+                    odds_data: (oddsData.length > 0 ? oddsData : null),
+                    notes
+                };
+                const base = await getApiBase();
+                const resp = await fetch(base + '/api/admin/matches', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!resp.ok) {
+                    const err = await resp.json().catch(() => ({}));
+                    throw new Error(err.detail || '保存失败');
+                }
+                const data = await resp.json();
+                alert(`保存成功：比赛(ID=${data.id ?? '—'})`);
+            } catch (e) {
+                alert(`保存失败：${e.message || e}`);
+            }
+        }
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+        function renderCharts(data) {
+            try {
+                const domF = document.getElementById('chart-fused');
+                if (domF) {
+                    const chartF = echarts.init(domF);
+                    const fh = Number(data.fused_home_win_prob || data.home_win_prob || 0);
+                    const fd = Number(data.fused_draw_prob || data.draw_prob || 0);
+                    const fa = Number(data.fused_away_win_prob || data.away_win_prob || 0);
+                    chartF.setOption({
+                        tooltip: { trigger: 'axis' },
+                        xAxis: { type: 'category', data: ['主胜','平','客胜'] },
+                        yAxis: { type: 'value', axisLabel: { formatter: (v)=> (v*100).toFixed(0) + '%' } },
+                        series: [{ type: 'bar', data: [fh, fd, fa], itemStyle: { color: '#0d6efd' } }],
+                        grid: { left: 40, right: 20, top: 30, bottom: 30 }
+                    });
+                }
+            } catch (e) {}
+            try {
+                const domH = document.getElementById('chart-heat');
+                const m = data.prob_matrix || data.score_matrix;
+                if (domH && Array.isArray(m) && m.length) {
+                    const chartH = echarts.init(domH);
+                    const maxI = Math.min(m.length, 6), maxJ = Math.min(m[0].length, 6);
+                    const seriesData = [];
+                    for (let i=0;i<maxI;i++){
+                        for (let j=0;j<maxJ;j++){
+                            const v = Number(m[i][j] || 0);
+                            seriesData.push([j, i, v]);
+                        }
+                    }
+                    chartH.setOption({
+                        tooltip: { formatter: (p)=> `主${p.value[1]}:客${p.value[0]}\n概率 ${(p.value[2]*100).toFixed(2)}%` },
+                        xAxis: { type: 'category', data: Array.from({length: maxJ}, (_,i)=> i), name: '客队进球' },
+                        yAxis: { type: 'category', data: Array.from({length: maxI}, (_,i)=> i), name: '主队进球' },
+                        visualMap: { min: 0, max: 0.25, calculable: true, orient: 'horizontal', left: 'center', bottom: 0 },
+                        series: [{ type: 'heatmap', data: seriesData }],
+                        grid: { left: 50, right: 20, top: 30, bottom: 40 }
+                    });
+                }
+            } catch (e) {}
+        }

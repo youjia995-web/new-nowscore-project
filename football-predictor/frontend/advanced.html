@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>高级指标预测页 · 足球比赛预测系统</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  
+  <link href="./styles.css" rel="stylesheet">
+  <style>
+    /* 将视觉交由 styles.css，仅保留最小排版 */
+    body { padding: 20px; }
+    .container { max-width: 1200px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <nav class="mb-4">
+      <a href="index.html" class="btn btn-outline-secondary btn-sm">返回主页面</a>
+    </nav>
+
+    <div class="text-center mb-4">
+      <h1>高级指标预测页</h1>
+      <p class="lead">专注 npxG/npxGA、PPDA/OPPDA、DC/ODC 等可选指标的输入与分析展示</p>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h3>球队数据</h3></div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <h5 class="mb-3">主队</h5>
+            <div class="row g-2">
+              <div class="col-6">
+                <label for="home-team-name" class="form-label">球队名称</label>
+                <input type="text" class="form-control" id="home-team-name" required>
+              </div>
+              <div class="col-6">
+                <label for="home-formation" class="form-label">阵型（如 4-2-3-1）</label>
+                <input type="text" class="form-control" id="home-formation" placeholder="可选">
+              </div>
+              <div class="col-6">
+                <label for="home-team-ranking" class="form-label">当前排名</label>
+                <input type="number" class="form-control" id="home-team-ranking" required>
+              </div>
+              <div class="col-4">
+                <label for="home-games-played" class="form-label">已赛场次</label>
+                <input type="number" class="form-control" id="home-games-played" value="30">
+              </div>
+              <div class="col-4">
+                <label for="home-xg" class="form-label">xG</label>
+                <input type="number" step="0.01" class="form-control" id="home-xg" value="2.1">
+              </div>
+              <div class="col-4">
+                <label for="home-xga" class="form-label">xGA</label>
+                <input type="number" step="0.01" class="form-control" id="home-xga" value="0.9">
+              </div>
+              <div class="col-4">
+                <label for="home-xpts" class="form-label">xPTS</label>
+                <input type="number" step="0.01" class="form-control" id="home-xpts" value="2.3">
+              </div>
+              <div class="col-4">
+                <label for="home-season-goals-for" class="form-label">赛季进球数</label>
+                <input type="number" class="form-control" id="home-season-goals-for" value="10">
+              </div>
+              <div class="col-4">
+                <label for="home-season-goals-against" class="form-label">赛季失球数</label>
+                <input type="number" class="form-control" id="home-season-goals-against" value="3">
+              </div>
+              <!-- 基本战绩指标（可选）：W/D/L/PTS -->
+              <div class="col-3">
+                <label for="home-wins" class="form-label">胜 (W)</label>
+                <input type="number" class="form-control" id="home-wins" placeholder="可选">
+              </div>
+              <div class="col-3">
+                <label for="home-draws" class="form-label">平 (D)</label>
+                <input type="number" class="form-control" id="home-draws" placeholder="可选">
+              </div>
+              <div class="col-3">
+                <label for="home-losses" class="form-label">负 (L)</label>
+                <input type="number" class="form-control" id="home-losses" placeholder="可选">
+              </div>
+              <div class="col-3">
+                <label for="home-points" class="form-label">积分 (PTS)</label>
+                <input type="number" step="0.01" class="form-control" id="home-points" placeholder="可选">
+              </div>
+              <!-- 高级指标（可选） -->
+              <div class="col-4"><label for="home-xpxgd" class="form-label">NPxGD</label><input type="number" step="0.01" class="form-control" id="home-xpxgd" placeholder="可选"></div>
+              <div class="col-4"><label for="home-npxg" class="form-label">npxG</label><input type="number" step="0.01" class="form-control" id="home-npxg" placeholder="可选"></div>
+              <div class="col-4"><label for="home-npxga" class="form-label">npxGA</label><input type="number" step="0.01" class="form-control" id="home-npxga" placeholder="可选"></div>
+              <div class="col-4"><label for="home-ppda" class="form-label">PPDA</label><input type="number" step="0.01" class="form-control" id="home-ppda" placeholder="可选"></div>
+              <div class="col-4"><label for="home-oppda" class="form-label">OPPDA</label><input type="number" step="0.01" class="form-control" id="home-oppda" placeholder="可选"></div>
+              <div class="col-4"><label for="home-dc" class="form-label">DC</label><input type="number" step="0.01" class="form-control" id="home-dc" placeholder="可选"></div>
+              <div class="col-4"><label for="home-odc" class="form-label">ODC</label><input type="number" step="0.01" class="form-control" id="home-odc" placeholder="可选"></div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <h5 class="mb-3">客队</h5>
+            <div class="row g-2">
+              <div class="col-6">
+                <label for="away-team-name" class="form-label">球队名称</label>
+                <input type="text" class="form-control" id="away-team-name" required>
+              </div>
+              <div class="col-6">
+                <label for="away-formation" class="form-label">阵型（如 4-3-3）</label>
+                <input type="text" class="form-control" id="away-formation" placeholder="可选">
+              </div>
+              <div class="col-6">
+                <label for="away-team-ranking" class="form-label">当前排名</label>
+                <input type="number" class="form-control" id="away-team-ranking" required>
+              </div>
+              <div class="col-4">
+                <label for="away-games-played" class="form-label">已赛场次</label>
+                <input type="number" class="form-control" id="away-games-played" value="30">
+              </div>
+              <div class="col-4">
+                <label for="away-xg" class="form-label">xG</label>
+                <input type="number" step="0.01" class="form-control" id="away-xg" value="1.8">
+              </div>
+              <div class="col-4">
+                <label for="away-xga" class="form-label">xGA</label>
+                <input type="number" step="0.01" class="form-control" id="away-xga" value="1.1">
+              </div>
+              <div class="col-4">
+                <label for="away-xpts" class="form-label">xPTS</label>
+                <input type="number" step="0.01" class="form-control" id="away-xpts" value="1.9">
+              </div>
+              <div class="col-4">
+                <label for="away-season-goals-for" class="form-label">赛季进球数</label>
+                <input type="number" class="form-control" id="away-season-goals-for" value="8">
+              </div>
+              <div class="col-4">
+                <label for="away-season-goals-against" class="form-label">赛季失球数</label>
+                <input type="number" class="form-control" id="away-season-goals-against" value="5">
+              </div>
+              <!-- 基本战绩指标（可选）：W/D/L/PTS -->
+              <div class="col-3">
+                <label for="away-wins" class="form-label">胜 (W)</label>
+                <input type="number" class="form-control" id="away-wins" placeholder="可选">
+              </div>
+              <div class="col-3">
+                <label for="away-draws" class="form-label">平 (D)</label>
+                <input type="number" class="form-control" id="away-draws" placeholder="可选">
+              </div>
+              <div class="col-3">
+                <label for="away-losses" class="form-label">负 (L)</label>
+                <input type="number" class="form-control" id="away-losses" placeholder="可选">
+              </div>
+              <div class="col-3">
+                <label for="away-points" class="form-label">积分 (PTS)</label>
+                <input type="number" step="0.01" class="form-control" id="away-points" placeholder="可选">
+              </div>
+              <!-- 高级指标（可选） -->
+              <div class="col-4"><label for="away-xpxgd" class="form-label">NPxGD</label><input type="number" step="0.01" class="form-control" id="away-xpxgd" placeholder="可选"></div>
+              <div class="col-4"><label for="away-npxg" class="form-label">npxG</label><input type="number" step="0.01" class="form-control" id="away-npxg" placeholder="可选"></div>
+              <div class="col-4"><label for="away-npxga" class="form-label">npxGA</label><input type="number" step="0.01" class="form-control" id="away-npxga" placeholder="可选"></div>
+              <div class="col-4"><label for="away-ppda" class="form-label">PPDA</label><input type="number" step="0.01" class="form-control" id="away-ppda" placeholder="可选"></div>
+              <div class="col-4"><label for="away-oppda" class="form-label">OPPDA</label><input type="number" step="0.01" class="form-control" id="away-oppda" placeholder="可选"></div>
+              <div class="col-4"><label for="away-dc" class="form-label">DC</label><input type="number" step="0.01" class="form-control" id="away-dc" placeholder="可选"></div>
+              <div class="col-4"><label for="away-odc" class="form-label">ODC</label><input type="number" step="0.01" class="form-control" id="away-odc" placeholder="可选"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h3>赔率数据</h3></div>
+      <div class="card-body">
+        <div id="odds-container"></div>
+        <button type="button" class="btn btn-outline-primary mt-2" onclick="addOddsRow()"><svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path fill-rule="evenodd" d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2Z"/></svg> 添加赔率公司</button>
+      </div>
+    </div>
+
+    <div class="card mt-3">
+      <div class="card-header"><h3>必发交易快照（Excel）</h3></div>
+      <div class="card-body">
+        <div class="row g-2 align-items-center">
+          <div class="col-md-6">
+            <input type="file" class="form-control" id="exchange-file" accept=".xlsx,.xls" />
+          </div>
+          <div class="col-md-3">
+            <button type="button" class="btn btn-outline-success" onclick="uploadExchangeSnapshot()">上传交易快照</button>
+          </div>
+          <div class="col-md-3">
+            <div id="exchange-upload-status" class="small text-muted"></div>
+          </div>
+        </div>
+        <div class="mt-2" id="exchange-summary-box" style="display:none;">
+          <strong>交易所融合摘要：</strong> <span id="exchange-summary-text"></span>
+        </div>
+      </div>
+    </div>
+
+    
+
+    <div class="card mb-4">
+      <div class="card-header"><h3>联赛参数建议</h3></div>
+      <div class="card-body">
+        <div class="row g-3 align-items-center">
+          <div class="col-12 col-md-6">
+            <label for="league-preset" class="form-label">联赛选择</label>
+            <select id="league-preset" class="form-select">
+              <option value="">不使用联赛建议</option>
+              <option value="英超/德甲">英超/德甲</option>
+              <option value="意甲/法甲">意甲/法甲</option>
+              <option value="西甲">西甲</option>
+            </select>
+            <div class="form-text">自动应用 BP_SHARED_STRENGTH 与 DRAW_BOOST_STRENGTH 建议值（仅当前请求）。</div>
+          </div>
+          <div class="col-12 col-md-6">
+            <div class="border rounded p-2 small text-muted" id="league-preset-hint">
+              建议范围：英超/德甲 0.12–0.16 / 0.06–0.10；意甲/法甲 0.16–0.22 / 0.08–0.12；西甲 0.14–0.18 / 0.08–0.10。
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card mb-4">
+      <div class="card-header"><h3>操作面板</h3></div>
+      <div class="card-body d-flex justify-content-center gap-3">
+        <button type="button" class="btn btn-primary btn-lg" onclick="submitData()">提交预测</button>
+         <button type="button" class="btn btn-outline-primary btn-lg" onclick="loadMockData()">加载模拟数据</button>
+      </div>
+    </div>
+
+    <div id="progress-div" class="card mt-3" style="display:none;">
+      <div class="card-header"><h3>预测进度</h3></div>
+      <div class="card-body">
+        <div class="d-flex align-items-center gap-2">
+          <div class="progress" style="flex:1">
+            <div id="progress-bar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width:0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+              <span id="progress-percent" class="progress-percent">0%</span>
+            </div>
+          </div>
+          <span id="progress-stage-icon" class="progress-stage-icon" aria-hidden="true"></span>
+        </div>
+        <p id="progress-text" class="mt-2 text-center"></p>
+        <div class="d-flex justify-content-end mt-2">
+          <button id="progress-cancel-btn" type="button" class="btn btn-outline-danger btn-sm" onclick="cancelProgress()">取消/重置</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="analysis-report" class="mt-4" style="display:none;">
+      <div class="card">
+        <div class="card-header"><h3>AI分析报告（含高级指标段落）</h3></div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6">
+              <div class="card mb-3"><div class="card-header"><h5>定量模型</h5></div><div class="card-body">
+                <p>主胜概率: <span class="model-home-win"></span></p>
+                <p>平局概率: <span class="model-draw"></span></p>
+                <p>客胜概率: <span class="model-away-win"></span></p>
+              </div></div>
+            </div>
+            <div class="col-md-6">
+              <div class="card mb-3"><div class="card-header"><h5>市场共识</h5></div><div class="card-body">
+                <p>主胜概率: <span class="market-home-win"></span></p>
+                <p>平局概率: <span class="market-draw"></span></p>
+                <p>客胜概率: <span class="market-away-win"></span></p>
+                <p><strong>趋势:</strong> <span class="market-trend-text"></span></p>
+              </div></div>
+            </div>
+          </div>
+          <div class="card mb-3"><div class="card-header"><h5>融合概率与让盘</h5></div><div class="card-body">
+            <p>主胜: <span class="fused-home-win"></span>；平局: <span class="fused-draw"></span>；客胜: <span class="fused-away"></span></p>
+            <p><strong>权重:</strong> <span class="fusion-weights-text"></span></p>
+            <p>期望让球: <span class="expected-handicap-text"></span>；终盘让球均值: <span class="market-final-handicap-text"></span></p>
+          </div></div>
+          <div class="card mb-3"><div class="card-header"><h5>历史赛季融合（按场次动态权重）</h5></div><div class="card-body">
+            <p class="text-muted">基于上赛季 xG/xGA/xPTS 与当前赛季数据的线性融合。</p>
+            <p><strong>摘要:</strong> <span class="history-summary-text"></span></p>
+          </div></div>
+    <div class="card">
+      <div class="card-header d-flex align-items-center justify-content-between">
+        <h5 class="mb-0">AI文本分析</h5>
+        <div class="d-flex align-items-center gap-3">
+          <div id="ai-source-label" class="small text-muted"></div>
+          <div class="btn-group btn-group-sm" role="group" aria-label="显示格式">
+            <button type="button" class="btn btn-outline-primary" id="toggle-text">文本</button>
+            <button type="button" class="btn btn-outline-primary" id="toggle-structured">结构化</button>
+            <button type="button" class="btn btn-outline-secondary" id="toggle-json">JSON</button>
+          </div>
+        </div>
+      </div>
+      <div class="card-body">
+        <pre class="ai-analysis"></pre>
+        <div class="analysis-structured" style="display:none"></div>
+        <pre class="analysis-json" style="display:none"></pre>
+      </div>
+    </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const handicapOptions = [ -2.0, -1.75, -1.5, -1.25, -1.0, -0.75, -0.5, -0.25, 0.0, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0 ];
+    const API_PORT = window.location.port;
+    const API_BASE = '';
+
+    const COMPANY_OPTIONS = ['365','皇冠（crown）','澳门','易胜博','威廉希尔','立博'];
+
+    function extractNumbers(val) {
+      if (val === null || val === undefined) return [];
+      if (typeof val === 'number') return [val];
+      const s = String(val);
+      const matches = s.match(/[+-]?\d+(?:\.\d+)?/g);
+      if (!matches) return [];
+      return matches.map(n => parseFloat(n)).filter(x => !Number.isNaN(x));
+    }
+
+    function populateHandicapSelect(selectElement) {
+      handicapOptions.forEach(option => {
+        const optionElement = document.createElement('option');
+        optionElement.value = option > 0 ? ('+' + option.toFixed(2)) : option.toFixed(2);
+        optionElement.textContent = option > 0 ? `+${option.toFixed(2)}` : option.toFixed(2);
+        selectElement.appendChild(optionElement);
+      });
+    }
+
+    // —— 自动探测后端 API 基地址（支持 ?api 覆盖；候选 3310/3309/5517/同源） ——
+    let __API_BASE_CACHE = null;
+    async function getApiBase() {
+      if (__API_BASE_CACHE !== null) return __API_BASE_CACHE;
+      const override = new URLSearchParams(window.location.search).get('api');
+      if (override && typeof override === 'string') { __API_BASE_CACHE = override; return override; }
+      const host = window.location.hostname;
+      const proto = window.location.protocol;
+      const lh = '127.0.0.1';
+      const candidates = [
+        // 同源优先（如果前端与后端同端口托管）
+        '',
+        // 常用后端端口（包括当前工作区活跃端口）
+        `${proto}//${host}:5512`, `${proto}//${host}:5533`, `${proto}//${host}:5518`, `${proto}//${host}:5527`, `${proto}//${host}:3310`, `${proto}//${host}:3309`, `${proto}//${host}:5517`,
+        // 本机直连（有些服务仅绑定 127.0.0.1）
+        `${proto}//${lh}:5512`, `${proto}//${lh}:5533`, `${proto}//${lh}:5518`, `${proto}//${lh}:5527`, `${proto}//${lh}:3310`, `${proto}//${lh}:3309`, `${proto}//${lh}:5517`
+      ];
+      for (const base of candidates) {
+        try {
+          const resp = await fetch(base + '/api/companies', { method: 'GET' });
+          if (resp.ok) { __API_BASE_CACHE = base; return base; }
+        } catch (e) { /* ignore */ }
+      }
+      __API_BASE_CACHE = '';
+      return '';
+    }
+
+    // —— 辅助：设值到输入框 ——
+    function setVal(id, v) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      if (v === null || v === undefined || Number.isNaN(v)) return;
+      el.value = typeof v === 'number' ? v : String(v);
+    }
+
+    // —— 根据返回指标填充输入框 ——
+    function fillTeamInputs(side, m) {
+      // 基础指标
+      setVal(`${side}-games-played`, m.games_played);
+      setVal(`${side}-xg`, m.xg);
+      setVal(`${side}-xga`, m.xga);
+      setVal(`${side}-xpts`, m.xpts);
+      // 基本战绩（若提供）
+      setVal(`${side}-points`, m.points);
+      setVal(`${side}-wins`, m.wins);
+      setVal(`${side}-draws`, m.draws);
+      setVal(`${side}-losses`, m.losses);
+      // 可选指标
+      setVal(`${side}-xpxgd`, m.xpxgd);
+      setVal(`${side}-npxg`, m.npxg);
+      setVal(`${side}-npxga`, m.npxga);
+      setVal(`${side}-ppda`, m.ppda);
+      setVal(`${side}-oppda`, m.oppda);
+      setVal(`${side}-dc`, m.dc);
+      setVal(`${side}-odc`, m.odc);
+      // 赛季进球/失球（若页面有）
+      setVal(`${side}-season-goals-for`, m.goals_for);
+      setVal(`${side}-season-goals-against`, m.goals_against);
+    }
+
+    // —— 根据球队名称自动拉取赛季指标并填充 ——
+    async function autoFillTeamMetrics(side) {
+      try {
+        const nameEl = document.getElementById(`${side}-team-name`);
+        if (!nameEl) return;
+        const team = (nameEl.value || '').trim();
+        if (!team) return;
+        // 可选：若页面存在赛季输入，则带上
+        const seasonEl = document.getElementById('match-season');
+        const season = seasonEl && seasonEl.value ? seasonEl.value.trim() : '';
+        const base = await getApiBase();
+        const params = new URLSearchParams({ team });
+        if (season) params.append('season', season);
+        const resp = await fetch(base + '/api/teams/metrics?' + params.toString());
+        if (resp.status === 404) {
+          alert('未找到该球队的赛季指标，请核实队名或赛季是否正确。');
+          return;
+        }
+        if (!resp.ok) throw new Error('请求球队指标失败');
+        const data = await resp.json();
+        fillTeamInputs(side, data);
+      } catch (e) {
+        console.warn('自动填充失败', e);
+      }
+    }
+
+    // —— 为球队名称输入框绑定事件：失焦/变更即自动填充 ——
+    document.addEventListener('DOMContentLoaded', () => {
+      const homeInput = document.getElementById('home-team-name');
+      const awayInput = document.getElementById('away-team-name');
+      if (homeInput) {
+        homeInput.addEventListener('blur', () => autoFillTeamMetrics('home'));
+        homeInput.addEventListener('change', () => autoFillTeamMetrics('home'));
+      }
+      if (awayInput) {
+        awayInput.addEventListener('blur', () => autoFillTeamMetrics('away'));
+        awayInput.addEventListener('change', () => autoFillTeamMetrics('away'));
+      }
+    });
+
+    async function populateCompanySelect(selectEl) {
+      try {
+        const base = await getApiBase();
+        const res = await fetch(base + '/api/companies');
+        const ct = res.headers.get('content-type') || '';
+        if (!ct.includes('application/json')) throw new Error('公司列表接口响应不是 JSON');
+        const data = await res.json();
+        const companies = Array.isArray(data.companies) ? data.companies : (Array.isArray(data) ? data : []);
+        companies.forEach(name => {
+          const opt = document.createElement('option');
+          opt.value = name; opt.textContent = name;
+          selectEl.appendChild(opt);
+        });
+      } catch (e) {
+        ['365','皇冠（crown）','澳门','易胜博'].forEach(name => {
+          const opt = document.createElement('option');
+          opt.value = name; opt.textContent = name; selectEl.appendChild(opt);
+        });
+      }
+    }
+
+    function addOddsRow(containerId = 'odds-container') {
+      const container = document.getElementById(containerId);
+      const newRow = document.createElement('div');
+      newRow.className = 'odds-row border p-3 mb-3 rounded';
+      newRow.innerHTML = `
+        <div class="row g-2">
+          <div class="col-md-3">
+            <label class="form-label">公司</label>
+            <select class="form-select company-name"></select>
+          </div>
+          <div class="col-md-3"><label class="form-label">初盘主胜</label><input type="number" step="0.01" class="form-control initial-home-win" value="1.90"></div>
+          <div class="col-md-2"><label class="form-label">初盘平局</label><input type="number" step="0.01" class="form-control initial-draw" value="3.50"></div>
+          <div class="col-md-2"><label class="form-label">初盘客胜</label><input type="number" step="0.01" class="form-control initial-away-win" value="4.20"></div>
+          <div class="col-md-2"><label class="form-label">初盘让球（正号=主受让，负号=主让）</label><select class="form-select initial-handicap"></select></div>
+        </div>
+        <div class="row g-2 mt-1">
+          <div class="col-md-2"><label class="form-label">初盘主赔</label><input type="number" step="0.01" class="form-control initial-handicap-home-odds" value="1.90"></div>
+          <div class="col-md-1"><label class="form-label">初盘客赔</label><input type="number" step="0.01" class="form-control initial-handicap-away-odds" value="1.90"></div>
+        </div>
+        <div class="row g-2 mt-1">
+          <div class="col-md-3"><label class="form-label">终盘主胜</label><input type="number" step="0.01" class="form-control final-home-win" value="1.85"></div>
+          <div class="col-md-2"><label class="form-label">终盘平局</label><input type="number" step="0.01" class="form-control final-draw" value="3.60"></div>
+          <div class="col-md-2"><label class="form-label">终盘客胜</label><input type="number" step="0.01" class="form-control final-away-win" value="4.40"></div>
+          <div class="col-md-2"><label class="form-label">终盘让球（正号=主受让，负号=主让）</label><select class="form-select final-handicap"></select></div>
+          <div class="col-md-2"><label class="form-label">终盘主赔</label><input type="number" step="0.01" class="form-control final-handicap-home-odds" value="1.90"></div>
+          <div class="col-md-1"><label class="form-label">终盘客赔</label><input type="number" step="0.01" class="form-control final-handicap-away-odds" value="1.90"></div>
+        </div>
+        <div class="row mt-2"><div class="col-md-2"><button type="button" class="btn btn-danger btn-sm" onclick="this.closest('.odds-row').remove()">删除</button></div></div>
+      `;
+      container.appendChild(newRow);
+      newRow.querySelectorAll('.initial-handicap, .final-handicap').forEach(populateHandicapSelect);
+      populateCompanySelect(newRow.querySelector('.company-name'));
+    }
+
+    async function loadMockData() {
+      try {
+        const base = await getApiBase();
+        const response = await fetch(base + '/api/mock-data');
+        const ct = response.headers.get('content-type') || '';
+        if (!ct.includes('application/json')) {
+          const text = await response.text();
+          throw new Error(`Mock data not JSON (${ct}): ${text.slice(0, 60)}`);
+        }
+        const mockData = await response.json();
+        const randomData = mockData[Math.floor(Math.random() * mockData.length)];
+
+        // 补全为至少3家公司
+        try {
+          const desiredCount = 3;
+          const usedNames = new Set((randomData.odds_data || []).map(o => String(o.company)));
+          const base = (randomData.odds_data && randomData.odds_data[0]) || null;
+
+          const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
+          const perturb = (n, ratio = 0.06) => { const delta = (Math.random() * 2 - 1) * ratio; return n * (1 + delta); };
+          const pickCompanyName = (idx) => {
+            const candidates = COMPANY_OPTIONS.filter(name => !usedNames.has(name));
+            if (candidates.length > 0) { const name = candidates[idx % candidates.length]; usedNames.add(name); return name; }
+            const fallback = `虚拟公司${String.fromCharCode(65 + (idx % 6))}`; usedNames.add(fallback); return fallback;
+          };
+          const pickHandicapLike = (val, drift = 0) => {
+            const nums = extractNumbers(val);
+            const baseVal = nums.length ? nums.reduce((a,b)=>a+b,0) / nums.length : 0;
+            const target = baseVal + drift;
+            const nearest = handicapOptions.reduce((best, cur) => (
+              Math.abs(cur - target) < Math.abs(best - target) ? cur : best
+            ), handicapOptions[0]);
+            return nearest;
+          };
+
+          if (base && (randomData.odds_data || []).length < desiredCount) {
+            const synthCount = desiredCount - randomData.odds_data.length;
+            for (let i = 0; i < synthCount; i++) {
+              const name = pickCompanyName(i);
+              const initHcap = pickHandicapLike(base.initial_handicap, (Math.random() - 0.5) * 0.5);
+              const finalHcap = pickHandicapLike(base.final_handicap, (Math.random() - 0.5) * 0.5);
+              const newOdds = {
+                company: name,
+                initial_home_win: clamp(perturb(base.initial_home_win), 1.05, 15.0),
+                initial_draw: clamp(perturb(base.initial_draw), 2.20, 15.0),
+                initial_away_win: clamp(perturb(base.initial_away_win), 1.20, 20.0),
+                final_home_win: clamp(perturb(base.final_home_win), 1.05, 15.0),
+                final_draw: clamp(perturb(base.final_draw), 2.20, 15.0),
+                final_away_win: clamp(perturb(base.final_away_win), 1.20, 20.0),
+                initial_handicap: String(initHcap),
+                final_handicap: String(finalHcap),
+                initial_handicap_home_odds: clamp(perturb(base.initial_handicap_home_odds ?? 1.90, 0.04), 1.50, 2.50),
+                initial_handicap_away_odds: clamp(perturb(base.initial_handicap_away_odds ?? 1.90, 0.04), 1.50, 2.50),
+                final_handicap_home_odds: clamp(perturb(base.final_handicap_home_odds ?? 1.90, 0.04), 1.50, 2.50),
+                final_handicap_away_odds: clamp(perturb(base.final_handicap_away_odds ?? 1.90, 0.04), 1.50, 2.50),
+              };
+              randomData.odds_data.push(newOdds);
+            }
+          }
+        } catch (e) {
+          console.warn('补全多公司模拟数据失败（忽略继续）:', e);
+        }
+
+        // 填充主队
+        document.getElementById('home-team-name').value = randomData.home_team.name;
+        document.getElementById('home-team-ranking').value = randomData.home_team.ranking;
+        document.getElementById('home-games-played').value = randomData.home_team.games_played;
+        document.getElementById('home-xg').value = randomData.home_team.xg;
+        document.getElementById('home-xga').value = randomData.home_team.xga;
+        document.getElementById('home-xpts').value = randomData.home_team.xpts;
+        document.getElementById('home-season-goals-for').value = randomData.home_team.goals_for;
+        document.getElementById('home-season-goals-against').value = randomData.home_team.goals_against;
+        const setOpt = (id, v) => { const el = document.getElementById(id); if (el) el.value = (typeof v === 'number' && Number.isFinite(v)) ? v : ''; };
+        setOpt('home-npxg', randomData.home_team.npxg);
+        setOpt('home-npxga', randomData.home_team.npxga);
+        setOpt('home-ppda', randomData.home_team.ppda);
+        setOpt('home-oppda', randomData.home_team.oppda);
+        setOpt('home-dc', randomData.home_team.dc);
+        setOpt('home-odc', randomData.home_team.odc);
+        setOpt('home-xpxgd', randomData.home_team.xpxgd);
+        setOpt('home-points', randomData.home_team.points);
+        setOpt('home-wins', randomData.home_team.wins);
+        setOpt('home-draws', randomData.home_team.draws);
+        setOpt('home-losses', randomData.home_team.losses);
+
+        // 填充客队
+        document.getElementById('away-team-name').value = randomData.away_team.name;
+        document.getElementById('away-team-ranking').value = randomData.away_team.ranking;
+        document.getElementById('away-games-played').value = randomData.away_team.games_played;
+        document.getElementById('away-xg').value = randomData.away_team.xg;
+        document.getElementById('away-xga').value = randomData.away_team.xga;
+        document.getElementById('away-xpts').value = randomData.away_team.xpts;
+        document.getElementById('away-season-goals-for').value = randomData.away_team.goals_for;
+        document.getElementById('away-season-goals-against').value = randomData.away_team.goals_against;
+        setOpt('away-npxg', randomData.away_team.npxg);
+        setOpt('away-npxga', randomData.away_team.npxga);
+        setOpt('away-ppda', randomData.away_team.ppda);
+        setOpt('away-oppda', randomData.away_team.oppda);
+        setOpt('away-dc', randomData.away_team.dc);
+        setOpt('away-odc', randomData.away_team.odc);
+        setOpt('away-xpxgd', randomData.away_team.xpxgd);
+        setOpt('away-points', randomData.away_team.points);
+        setOpt('away-wins', randomData.away_team.wins);
+        setOpt('away-draws', randomData.away_team.draws);
+        setOpt('away-losses', randomData.away_team.losses);
+
+        // 填充赔率
+        const oddsContainer = document.getElementById('odds-container');
+        oddsContainer.innerHTML = '';
+        (randomData.odds_data || []).forEach(odds => {
+          addOddsRow();
+          const newRow = oddsContainer.lastElementChild;
+          const companySelect = newRow.querySelector('.company-name');
+          if (![...companySelect.options].some(opt => opt.value === String(odds.company))) {
+            const opt = document.createElement('option');
+            opt.value = String(odds.company);
+            opt.textContent = String(odds.company);
+            companySelect.appendChild(opt);
+          }
+          companySelect.value = String(odds.company);
+          newRow.querySelector('.initial-home-win').value = Number(odds.initial_home_win).toFixed(2);
+          newRow.querySelector('.initial-draw').value = Number(odds.initial_draw).toFixed(2);
+          newRow.querySelector('.initial-away-win').value = Number(odds.initial_away_win).toFixed(2);
+          newRow.querySelector('.final-home-win').value = Number(odds.final_home_win).toFixed(2);
+          newRow.querySelector('.final-draw').value = Number(odds.final_draw).toFixed(2);
+          newRow.querySelector('.final-away-win').value = Number(odds.final_away_win).toFixed(2);
+          const initNums = extractNumbers(odds.initial_handicap);
+          const finalNums = extractNumbers(odds.final_handicap);
+          if (initNums.length > 0) {
+            const initAvg = initNums.length > 1 ? (initNums.reduce((a,b)=>a+b,0) / initNums.length) : initNums[0];
+            newRow.querySelector('.initial-handicap').value = (initAvg > 0 ? ('+' + initAvg.toFixed(2)) : initAvg.toFixed(2));
+          } else {
+            newRow.querySelector('.initial-handicap').value = (function(h){ h=String(h); const x=parseFloat(h); return (!Number.isNaN(x) && x>0 && !h.trim().startsWith('+')) ? ('+'+x.toFixed(2)) : h; })(odds.initial_handicap);
+          }
+          if (finalNums.length > 0) {
+            const finalAvg = finalNums.length > 1 ? (finalNums.reduce((a,b)=>a+b,0) / finalNums.length) : finalNums[0];
+            newRow.querySelector('.final-handicap').value = (finalAvg > 0 ? ('+' + finalAvg.toFixed(2)) : finalAvg.toFixed(2));
+          } else {
+            newRow.querySelector('.final-handicap').value = (function(h){ h=String(h); const x=parseFloat(h); return (!Number.isNaN(x) && x>0 && !h.trim().startsWith('+')) ? ('+'+x.toFixed(2)) : h; })(odds.final_handicap);
+          }
+          if (newRow.querySelector('.final-handicap-home-odds') && typeof odds.final_handicap_home_odds === 'number') {
+            newRow.querySelector('.final-handicap-home-odds').value = Number(odds.final_handicap_home_odds).toFixed(2);
+          }
+          if (newRow.querySelector('.final-handicap-away-odds') && typeof odds.final_handicap_away_odds === 'number') {
+            newRow.querySelector('.final-handicap-away-odds').value = Number(odds.final_handicap_away_odds).toFixed(2);
+          }
+          if (newRow.querySelector('.initial-handicap-home-odds') && typeof odds.initial_handicap_home_odds === 'number') {
+            newRow.querySelector('.initial-handicap-home-odds').value = Number(odds.initial_handicap_home_odds).toFixed(2);
+          }
+          if (newRow.querySelector('.initial-handicap-away-odds') && typeof odds.initial_handicap_away_odds === 'number') {
+            newRow.querySelector('.initial-handicap-away-odds').value = Number(odds.initial_handicap_away_odds).toFixed(2);
+          }
+        });
+      } catch (e) {
+        console.error('加载模拟数据失败：', e);
+        alert('加载模拟数据失败，请稍后再试。');
+      }
+    }
+
+    function getStageIconSvg(stage) {
+      switch (stage) {
+        case 1: // 下载/收集
+          return '<svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path fill-rule="evenodd" d="M8 1.5a.5.5 0 0 1 .5.5v6.793l2.146-2.147a.5.5 0 1 1 .708.708l-3 3a.5.5 0 0 1-.708 0l-3-3a.5.5 0 0 1 .708-.708L7.5 8.793V2a.5.5 0 0 1 .5-.5Z"/><path d="M2 13.5a.5.5 0 0 1 .5-.5h11a.5.5 0 1 1 0 1h-11a.5.5 0 0 1-.5-.5Z"/></svg>';
+        case 2: // 计算/处理
+          return '<svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1a1 1 0 0 1 1 1v1.06a5.002 5.002 0 0 1 3.94 3.94H14a1 1 0 1 1 0 2h-1.06a5.002 5.002 0 0 1-3.94 3.94V14a1 1 0 1 1-2 0v-1.06a5.002 5.002 0 0 1-3.94-3.94H2a1 1 0 1 1 0-2h1.06a5.002 5.002 0 0 1 3.94-3.94V2a1 1 0 0 1 1-1Z"/></svg>';
+        case 3: // 合并/完成
+        default:
+          return '<svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 5.5A2.5 2.5 0 0 1 6 3h4a2.5 2.5 0 1 1 0 5H8a2.5 2.5 0 0 1-2.5-2.5Z"/><path d="M2 11a2 2 0 0 1 2-2h8a2 2 0 1 1 0 4H4a2 2 0 0 1-2-2Z"/></svg>';
+      }
+    }
+
+    function updateProgress(percentage, text) {
+      const progressBar = document.getElementById('progress-bar');
+      const progressText = document.getElementById('progress-text');
+      const percentEl = document.getElementById('progress-percent');
+      const to = Math.max(0, Math.min(100, Number(percentage) || 0));
+      progressBar.style.width = `${to}%`;
+      progressBar.setAttribute('aria-valuenow', to);
+      if (percentEl) percentEl.textContent = `${to}%`;
+      if (typeof text === 'string') progressText.textContent = text || '';
+    }
+
+    function cancelProgress() {
+      try {
+        if (window._predictAbortController) {
+          window._predictAbortController.abort();
+          window._predictAbortController = null;
+        }
+      } catch {}
+      const progressDiv = document.getElementById('progress-div');
+      const progressBar = document.getElementById('progress-bar');
+      const percentEl = document.getElementById('progress-percent');
+      const progressText = document.getElementById('progress-text');
+      progressBar.style.width = '0%';
+      progressBar.setAttribute('aria-valuenow', 0);
+      if (percentEl) percentEl.textContent = '0%';
+      progressText.textContent = '';
+      progressDiv.style.display = 'none';
+    }
+
+    async function submitData() {
+      try {
+        const progressDiv = document.getElementById('progress-div');
+        const analysisReport = document.getElementById('analysis-report');
+        progressDiv.style.display = 'block';
+        analysisReport.style.display = 'none';
+        updateProgress(20, '收集球队数据...');
+
+        const homeTeam = {
+          name: document.getElementById('home-team-name').value,
+          formation: (document.getElementById('home-formation').value || '').trim() || undefined,
+          ranking: parseInt(document.getElementById('home-team-ranking').value),
+          games_played: parseInt(document.getElementById('home-games-played').value),
+          xg: parseFloat(document.getElementById('home-xg').value),
+          xga: parseFloat(document.getElementById('home-xga').value),
+          xpts: parseFloat(document.getElementById('home-xpts').value),
+          goals_for: parseInt(document.getElementById('home-season-goals-for').value),
+          goals_against: parseInt(document.getElementById('home-season-goals-against').value)
+        };
+        const addOptionalMetric = (obj, id, key) => {
+          const el = document.getElementById(id); if (!el) return; const v = parseFloat(el.value); if (Number.isFinite(v)) obj[key] = v;
+        };
+        const addOptionalInt = (obj, id, key) => {
+          const el = document.getElementById(id); if (!el) return; const v = parseInt(el.value, 10); if (Number.isFinite(v)) obj[key] = v;
+        };
+        addOptionalMetric(homeTeam, 'home-npxg', 'npxg');
+        addOptionalMetric(homeTeam, 'home-npxga', 'npxga');
+        addOptionalMetric(homeTeam, 'home-ppda', 'ppda');
+        addOptionalMetric(homeTeam, 'home-oppda', 'oppda');
+        addOptionalMetric(homeTeam, 'home-dc', 'dc');
+        addOptionalMetric(homeTeam, 'home-odc', 'odc');
+        addOptionalMetric(homeTeam, 'home-xpxgd', 'xpxgd');
+        addOptionalInt(homeTeam, 'home-points', 'points');
+        addOptionalInt(homeTeam, 'home-wins', 'wins');
+        addOptionalInt(homeTeam, 'home-draws', 'draws');
+        addOptionalInt(homeTeam, 'home-losses', 'losses');
+
+        const awayTeam = {
+          name: document.getElementById('away-team-name').value,
+          formation: (document.getElementById('away-formation').value || '').trim() || undefined,
+          ranking: parseInt(document.getElementById('away-team-ranking').value),
+          games_played: parseInt(document.getElementById('away-games-played').value),
+          xg: parseFloat(document.getElementById('away-xg').value),
+          xga: parseFloat(document.getElementById('away-xga').value),
+          xpts: parseFloat(document.getElementById('away-xpts').value),
+          goals_for: parseInt(document.getElementById('away-season-goals-for').value),
+          goals_against: parseInt(document.getElementById('away-season-goals-against').value)
+        };
+        addOptionalMetric(awayTeam, 'away-npxg', 'npxg');
+        addOptionalMetric(awayTeam, 'away-npxga', 'npxga');
+        addOptionalMetric(awayTeam, 'away-ppda', 'ppda');
+        addOptionalMetric(awayTeam, 'away-oppda', 'oppda');
+        addOptionalMetric(awayTeam, 'away-dc', 'dc');
+        addOptionalMetric(awayTeam, 'away-odc', 'odc');
+        addOptionalMetric(awayTeam, 'away-xpxgd', 'xpxgd');
+        addOptionalInt(awayTeam, 'away-points', 'points');
+        addOptionalInt(awayTeam, 'away-wins', 'wins');
+        addOptionalInt(awayTeam, 'away-draws', 'draws');
+        addOptionalInt(awayTeam, 'away-losses', 'losses');
+
+        const requiredTeamNums = ['ranking','games_played','xg','xga','xpts','goals_for','goals_against'];
+        const teamInvalid = (!homeTeam.name || !awayTeam.name || requiredTeamNums.some(k => !Number.isFinite(homeTeam[k])) || requiredTeamNums.some(k => !Number.isFinite(awayTeam[k])));
+        if (teamInvalid) { alert('请完整填写主客队名称及数值字段。'); progressDiv.style.display='none'; return; }
+
+        updateProgress(40, '收集赔率数据...');
+        const oddsDataRaw = [];
+        document.querySelectorAll('.odds-row').forEach(row => {
+          const entry = {
+            company: row.querySelector('.company-name').value,
+            initial_home_win: parseFloat(row.querySelector('.initial-home-win').value),
+            initial_draw: parseFloat(row.querySelector('.initial-draw').value),
+            initial_away_win: parseFloat(row.querySelector('.initial-away-win').value),
+            final_home_win: parseFloat(row.querySelector('.final-home-win').value),
+            final_draw: parseFloat(row.querySelector('.final-draw').value),
+            final_away_win: parseFloat(row.querySelector('.final-away-win').value),
+            initial_handicap: row.querySelector('.initial-handicap').value,
+            final_handicap: row.querySelector('.final-handicap').value,
+            initial_handicap_home_odds: parseFloat(row.querySelector('.initial-handicap-home-odds')?.value ?? NaN),
+            initial_handicap_away_odds: parseFloat(row.querySelector('.initial-handicap-away-odds')?.value ?? NaN),
+            final_handicap_home_odds: parseFloat(row.querySelector('.final-handicap-home-odds')?.value ?? NaN),
+            final_handicap_away_odds: parseFloat(row.querySelector('.final-handicap-away-odds')?.value ?? NaN)
+          };
+          oddsDataRaw.push(entry);
+        });
+        const oddsData = oddsDataRaw.filter(entry => {
+          const nums = [
+            entry.initial_home_win,
+            entry.initial_draw,
+            entry.initial_away_win,
+            entry.initial_handicap_home_odds,
+            entry.initial_handicap_away_odds,
+            entry.final_home_win,
+            entry.final_draw,
+            entry.final_away_win,
+            entry.final_handicap_home_odds,
+            entry.final_handicap_away_odds
+          ];
+          const strsOk = entry.company && entry.initial_handicap && entry.final_handicap;
+          const numsOk = nums.every(v => Number.isFinite(v));
+          return strsOk && numsOk;
+        });
+        if (oddsData.length === 0) { alert('请至少填写一行完整的公司赔率与盘口数据。'); progressDiv.style.display='none'; return; }
+
+        updateProgress(60, '发送数据到预测引擎...');
+        const payload = { home_team: homeTeam, away_team: awayTeam, odds_data: oddsData }
+        
+        const _lpSel = document.getElementById('league-preset');
+        if (_lpSel && _lpSel.value && _lpSel.value.trim()) {
+          payload.league_preset = _lpSel.value.trim();
+        }
+    ;
+        const base = await getApiBase();
+        // 支持取消：若已存在控制器先中止旧请求
+        try { if (window._predictAbortController) window._predictAbortController.abort(); } catch {}
+        window._predictAbortController = new AbortController();
+        const response = await fetch(base + '/api/predict', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload), signal: window._predictAbortController.signal });
+        if (!response.ok) { let err={}; try{err=await response.json();}catch(e){} alert(`预测请求失败：${response.status} ${err?.detail ? JSON.stringify(err.detail) : ''}`); progressDiv.style.display='none'; return; }
+
+        updateProgress(80, '处理预测结果...');
+        const data = await response.json();
+        updateProgress(100, '分析完成');
+        setTimeout(() => {
+          progressDiv.style.display = 'none';
+          analysisReport.style.display = 'block';
+          document.querySelector('.model-home-win').textContent = `${(data.home_win_prob * 100).toFixed(2)}%`;
+          document.querySelector('.model-draw').textContent = `${(data.draw_prob * 100).toFixed(2)}%`;
+          document.querySelector('.model-away-win').textContent = `${(data.away_win_prob * 100).toFixed(2)}%`;
+          document.querySelector('.market-home-win').textContent = `${(data.market_home_win_prob * 100).toFixed(2)}%`;
+          document.querySelector('.market-draw').textContent = `${(data.market_draw_prob * 100).toFixed(2)}%`;
+          document.querySelector('.market-away-win').textContent = `${(data.market_away_win_prob * 100).toFixed(2)}%`;
+          document.querySelector('.market-trend-text').textContent = data.market_trend;
+          if (typeof data.fused_home_win_prob === 'number') {
+            document.querySelector('.fused-home-win').textContent = `${(data.fused_home_win_prob * 100).toFixed(2)}%`;
+            document.querySelector('.fused-draw').textContent = `${(data.fused_draw_prob * 100).toFixed(2)}%`;
+            document.querySelector('.fused-away').textContent = `${(data.fused_away_win_prob * 100).toFixed(2)}%`;
+          } else {
+            document.querySelector('.fused-home-win').textContent = '—';
+            document.querySelector('.fused-draw').textContent = '—';
+            document.querySelector('.fused-away').textContent = '—';
+          }
+          const expHcap = (typeof data.expected_handicap === 'number') ? data.expected_handicap : null;
+          const mktHcap = (typeof data.market_final_handicap === 'number') ? data.market_final_handicap : null;
+          document.querySelector('.expected-handicap-text').textContent = expHcap !== null ? (expHcap>0?`+${expHcap.toFixed(2)}`:expHcap.toFixed(2)) : '—';
+          document.querySelector('.market-final-handicap-text').textContent = mktHcap !== null ? (mktHcap>0?`+${mktHcap.toFixed(2)}`:mktHcap.toFixed(2)) : '—';
+          document.querySelector('.fusion-weights-text').textContent = (data.fusion_weights && typeof data.fusion_weights.model==='number') ? `模型${data.fusion_weights.model.toFixed(2)}，市场${data.fusion_weights.market.toFixed(2)}` : '（未提供权重信息）';
+          const histEl = document.querySelector('.history-summary-text');
+          if (histEl) { histEl.textContent = data.history_summary || '（当前不使用历史融合或未找到历史数据）'; }
+          // 文本分析
+          document.querySelector('.ai-analysis').textContent = data.analysis || '（AI分析不可用或未启用）';
+          // 结构化分析渲染与切换
+          window._analysisStruct = data.analysis_struct || null;
+          renderStructuredAnalysis(window._analysisStruct);
+          // 默认：若有结构化则显示结构化，否则显示文本
+          if (window._analysisStruct) {
+            setAnalysisMode('structured');
+          } else {
+            setAnalysisMode('text');
+          }
+const srcLabel = document.getElementById('ai-source-label');
+if (srcLabel) {
+  const src = data.analysis_source;
+  if (src === 'deepseek') {
+    srcLabel.textContent = 'AI来源：DeepSeek';
+    srcLabel.className = 'small text-success';
+  } else {
+    srcLabel.textContent = 'AI来源：本地基础分析（未启用外部AI，需配置 DEEPSEEK_API_KEY）';
+    srcLabel.className = 'small text-muted';
+  }
+}
+        }, 200);
+      } catch (e) {
+        console.error('提交失败：', e);
+        if (e && e.name === 'AbortError') {
+          // 用户取消，无需提示
+          const progressDiv = document.getElementById('progress-div');
+          progressDiv.style.display = 'none';
+          return;
+        }
+        alert('提交过程中发生错误，请检查输入或稍后重试。');
+        const progressDiv = document.getElementById('progress-div');
+        progressDiv.style.display = 'none';
+      }
+    }
+
+    async function uploadExchangeSnapshot() {
+      try {
+        const fileInput = document.getElementById('exchange-file');
+        const statusEl = document.getElementById('exchange-upload-status');
+        const summaryBox = document.getElementById('exchange-summary-box');
+        const summaryEl = document.getElementById('exchange-summary-text');
+        summaryBox.style.display = 'none';
+        summaryEl.textContent = '';
+        statusEl.textContent = '';
+        if (!fileInput.files || fileInput.files.length === 0) {
+          alert('请选择必发交易快照 Excel 文件 (.xlsx/.xls)。');
+          return;
+        }
+        const homeName = (document.getElementById('home-team-name').value || '').trim();
+        const awayName = (document.getElementById('away-team-name').value || '').trim();
+        const fd = new FormData();
+        fd.append('file', fileInput.files[0]);
+        statusEl.textContent = '上传中...';
+        const base = await getApiBase();
+        const params = new URLSearchParams();
+        if (homeName) params.set('home', homeName);
+        if (awayName) params.set('away', awayName);
+        const url = base + '/api/admin/exchange-snapshot/upload' + (params.toString() ? ('?' + params.toString()) : '');
+        const resp = await fetch(url, { method: 'POST', body: fd });
+        if (!resp.ok) {
+          let errTxt = '';
+          try { const j = await resp.json(); errTxt = j?.detail ? JSON.stringify(j.detail) : ''; } catch (e) {}
+          statusEl.textContent = '';
+          alert(`上传失败：${resp.status} ${errTxt}`);
+          return;
+        }
+        const data = await resp.json();
+        statusEl.textContent = '上传成功';
+        const summ = (data?.features?.summary) || '';
+        if (summ) { summaryEl.textContent = summ; summaryBox.style.display = 'block'; }
+      } catch (e) {
+        console.error('上传交易快照失败：', e);
+        document.getElementById('exchange-upload-status').textContent = '';
+        alert('上传交易快照失败，请检查文件格式或稍后再试。');
+      }
+    }
+
+    // —— 结构化分析渲染与切换 ——
+    function renderStructuredAnalysis(struct) {
+      const el = document.querySelector('.analysis-structured');
+      if (!el) return;
+      if (!struct || !struct.sections || !Array.isArray(struct.sections)) {
+        el.innerHTML = '<div class="text-muted">（结构化分析不可用）</div>';
+        return;
+      }
+      const parts = [];
+      // 可选摘要
+      if (struct.summary) {
+        try {
+          const dist = struct.summary.distribution || {};
+          const top = Array.isArray(struct.summary.top_scores) ? struct.summary.top_scores : [];
+          parts.push(`<div class="mb-2"><strong>摘要：</strong>主胜${dist.home ?? '—'}%，平局${dist.draw ?? '—'}%，客胜${dist.away ?? '—'}%（${dist.source || 'model'}）。`);
+          if (top.length) {
+            parts.push(`<div class="text-muted">前3个可能比分：${top.map(x=>`${x.score}(${x.prob ?? '—'}%)`).join(', ')}</div>`);
+          }
+          parts.push(`</div>`);
+        } catch (e) {}
+      }
+      // 分区
+      struct.sections.forEach(section => {
+        parts.push(`<details open class="mb-3"><summary class="fw-semibold">${section.title || '（未命名分区）'}</summary>`);
+        if (Array.isArray(section.items)) {
+          section.items.forEach(item => {
+            const t = (item.type || '').toLowerCase();
+            const text = item.text || '';
+            if (t === 'bullet') {
+              parts.push(`<div class="d-flex align-items-start gap-2"><span>•</span><span>${text}</span></div>`);
+            } else if (t === 'metric') {
+              const meta = item.meta ? JSON.stringify(item.meta, null, 2) : '';
+              parts.push(`<div class="mt-1"><div class="small text-muted">${text || '指标'}</div><pre class="bg-light p-2 rounded border">${meta}</pre></div>`);
+            } else { // paragraph 或其他
+              parts.push(`<p class="mb-1">${text}</p>`);
+            }
+          });
+        }
+        parts.push(`</details>`);
+      });
+      el.innerHTML = parts.join('');
+    }
+
+    function setAnalysisMode(mode) {
+      const preText = document.querySelector('.ai-analysis');
+      const structEl = document.querySelector('.analysis-structured');
+      const jsonEl = document.querySelector('.analysis-json');
+      const btnText = document.getElementById('toggle-text');
+      const btnStruct = document.getElementById('toggle-structured');
+      const btnJson = document.getElementById('toggle-json');
+      const setActive = (btn, active) => {
+        if (!btn) return;
+        btn.classList.toggle('btn-primary', active);
+        btn.classList.toggle('btn-outline-primary', !active && (btn === btnText || btn === btnStruct));
+        btn.classList.toggle('btn-outline-secondary', !active && btn === btnJson);
+      };
+      if (mode === 'structured') {
+        preText.style.display = 'none';
+        structEl.style.display = 'block';
+        jsonEl.style.display = 'none';
+        setActive(btnText, false); setActive(btnStruct, true); setActive(btnJson, false);
+      } else if (mode === 'json') {
+        preText.style.display = 'none';
+        structEl.style.display = 'none';
+        jsonEl.style.display = 'block';
+        jsonEl.textContent = JSON.stringify(window._analysisStruct || {}, null, 2);
+        setActive(btnText, false); setActive(btnStruct, false); setActive(btnJson, true);
+      } else { // text
+        preText.style.display = 'block';
+        structEl.style.display = 'none';
+        jsonEl.style.display = 'none';
+        setActive(btnText, true); setActive(btnStruct, false); setActive(btnJson, false);
+      }
+    }
+
+    function initAnalysisToggle() {
+      const bText = document.getElementById('toggle-text');
+      const bStruct = document.getElementById('toggle-structured');
+      const bJson = document.getElementById('toggle-json');
+      if (bText) bText.addEventListener('click', () => setAnalysisMode('text'));
+      if (bStruct) bStruct.addEventListener('click', () => setAnalysisMode('structured'));
+      if (bJson) bJson.addEventListener('click', () => setAnalysisMode('json'));
+    }
+
+    // 页面加载时添加一行赔率并初始化
+    window.addEventListener('DOMContentLoaded', () => { addOddsRow(); initAnalysisToggle(); });
+  </script>
+</body>
+</html>

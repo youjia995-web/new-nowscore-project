@@ -1,0 +1,69 @@
+@import './base.css';
+
+:root {
+  --pixel-bg: #fff5e8;
+  --pixel-primary: #ff3b3b;
+  --pixel-accent: #00b5ff;
+  --pixel-border: #222222;
+  --pixel-shadow: #000000;
+  --pixel-card-bg: #ffffff;
+}
+
+#app {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 2rem;
+  font-weight: normal;
+}
+
+a,
+.green {
+  text-decoration: none;
+  color: var(--pixel-accent);
+  transition: 0.4s;
+  padding: 3px;
+}
+
+@media (hover: hover) {
+  a:hover {
+    background-color: rgba(0, 181, 255, 0.2);
+    animation: pixel-jitter 140ms steps(2) 2;
+  }
+}
+
+body {
+  background-color: #f7f9fc;
+  background-image: none;
+}
+
+@keyframes pixel-jitter {
+  0% { transform: translate(0,0); }
+  50% { transform: translate(1px,1px); }
+  100% { transform: translate(0,0); }
+}
+
+.pixel-shadow { box-shadow: 4px 4px 0 var(--pixel-shadow) !important; }
+.pixel-border { border: 2px solid var(--pixel-border) !important; border-radius: 0 !important; }
+
+.el-button { border-radius: 0; border: 2px solid var(--pixel-border); box-shadow: 4px 4px 0 var(--pixel-shadow); }
+.el-button--primary { background-color: var(--pixel-primary); border-color: var(--pixel-border); }
+.el-button:hover { animation: pixel-jitter 140ms steps(2) 2; }
+
+.el-card { border-radius: 0; border: 2px solid var(--pixel-border); box-shadow: 4px 4px 0 var(--pixel-shadow); background: var(--pixel-card-bg); }
+
+.el-input__wrapper { border-radius: 0 !important; border: 2px solid var(--pixel-border) !important; box-shadow: 4px 4px 0 var(--pixel-shadow) !important; background: #ffffff !important; }
+.el-select .el-input__wrapper { border-radius: 0 !important; }
+.el-input-number { border-radius: 0; border: 2px solid var(--pixel-border); box-shadow: 4px 4px 0 var(--pixel-shadow); padding: 6px; background: #ffffff; }
+.el-dialog { border-radius: 0; border: 2px solid var(--pixel-border); box-shadow: 4px 4px 0 var(--pixel-shadow); }
+.el-menu--horizontal { border-bottom: 2px solid var(--pixel-border); }
+.el-menu-item:hover, .el-menu-item.is-active { animation: pixel-jitter 140ms steps(2) 2; }
+
+@media (min-width: 1024px) {
+  body {
+  }
+
+  #app {
+    display: block;
+    padding: 0 2rem;
+  }
+}

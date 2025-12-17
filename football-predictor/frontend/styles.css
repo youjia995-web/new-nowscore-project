@@ -1,0 +1,126 @@
+/* 轻主题：浅色系清洁风（不改变结构，覆盖视觉） */
+:root {
+  --bg: #f7f9fc;           /* 页面背景 */
+  --surface: #ffffff;       /* 卡片背景 */
+  --text: #1f2937;          /* 主文字 */
+  --muted: #6b7280;         /* 次要文字 */
+  --accent: #2563eb;        /* 主色（蓝） */
+  --accent-weak: #e8efff;   /* 主色浅背景 */
+  --success: #16a34a;       /* 成功 */
+  --danger: #dc2626;        /* 错误 */
+  --radius: 12px;           /* 圆角 */
+  --shadow: 0 6px 18px rgba(16,24,40,0.08); /* 柔和阴影 */
+  --space-1: 8px;
+  --space-2: 12px;
+  --space-3: 16px;
+  --space-4: 24px;
+}
+
+html, body {
+  background: var(--bg);
+  color: var(--text);
+}
+
+.container, .container-fluid, .container-lg, .container-xl {
+  max-width: 1320px;
+}
+
+/* 卡片样式 */
+.card {
+  background: var(--surface);
+  border: 1px solid rgba(2, 6, 23, 0.06);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  margin-bottom: var(--space-4);
+}
+.card-header {
+  background: transparent;
+  border-bottom: 1px solid rgba(2, 6, 23, 0.06);
+}
+.card-title { margin: 0; font-weight: 600; color: var(--text); }
+.card-subtitle { color: var(--muted); font-size: 0.95rem; }
+.section-subtitle { color: var(--muted); letter-spacing: .02em; }
+
+/* 按钮与操作 */
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  box-shadow: 0 4px 10px rgba(37,99,235,0.25);
+}
+.btn-outline-primary {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.btn-success { background: var(--success); border-color: var(--success); }
+.btn-danger { background: var(--danger); border-color: var(--danger); }
+
+/* 输入控件 */
+.form-label { color: var(--muted); font-weight: 600; }
+.form-text { color: var(--muted); }
+.form-control, .form-select {
+  background: #ffffff;
+  border: 1px solid rgba(2, 6, 23, 0.10);
+  color: var(--text);
+  border-radius: 10px;
+}
+.form-control:focus, .form-select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 .2rem rgba(37,99,235,0.15);
+}
+
+/* 进度与提示（回滚到 Bootstrap 默认样式，不做自定义覆盖） */
+.badge { background: var(--accent-weak); color: var(--accent); border-radius: 6px; }
+
+/* 表格、分隔、行距 */
+.table { color: var(--text); }
+hr { border-top: 1px solid rgba(2,6,23,0.08); }
+.row { row-gap: var(--space-2); }
+
+/* 赔率输入行（卡片化外观） */
+.odds-row {
+  background: var(--surface);
+  border: 1px solid rgba(2,6,23,0.06);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+/* 图表容器与数字卡片 */
+.chart-card {
+  background: var(--surface);
+  border: 1px solid rgba(2,6,23,0.06);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: var(--space-3);
+}
+.kpi {
+  background: #fafbff;
+  border: 1px solid rgba(2,6,23,0.06);
+  border-radius: 14px;
+  padding: var(--space-3);
+}
+.kpi-title { color: var(--muted); font-size: 0.9rem; }
+.kpi-value { color: var(--text); font-weight: 700; font-size: 1.4rem; }
+
+/* 页头导航（轻量） */
+.navbar, #main-tabs { background: transparent; }
+.nav-link.active { color: var(--accent) !important; border-bottom: 2px solid var(--accent); }
+
+/* 卡片内标题与内容间距 */
+.card .form-group, .card .col-md-*, .card .row { margin-bottom: var(--space-2); }
+
+/* 次要按钮悬停弱提升 */
+.btn-outline-primary:hover { background: var(--accent-weak); }
+
+/* 轻量容器边距 */
+#section-predict, #section-admin { padding-top: var(--space-3); }
+
+/* 通用内联图标样式（避免外部CDN依赖） */
+.icon {
+  width: 1em;
+  height: 1em;
+  fill: currentColor;
+  vertical-align: -0.125em;
+  margin-right: 0.35em;
+}
